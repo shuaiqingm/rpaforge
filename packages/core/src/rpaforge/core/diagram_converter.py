@@ -207,8 +207,11 @@ class DiagramConverter:
         data = node.get("data", {})
         block_data = data.get("blockData", {})
 
+        activity_data = data.get("activity") or block_data.get("activity")
+        if not activity_data:
+            return None
+
         library = block_data.get("library", "Flow")
-        activity_data = block_data.get("activity", "Log Message")
 
         if isinstance(activity_data, dict):
             activity_name = activity_data.get("name", "Log Message")
