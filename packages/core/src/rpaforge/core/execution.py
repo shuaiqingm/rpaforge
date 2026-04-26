@@ -71,10 +71,6 @@ class Variable:
     name: str
     value: Any = None
 
-    def __post_init__(self):
-        if not self.name.startswith("${"):
-            self.name = f"${{{self.name}}}"
-
 
 @dataclass
 class Task:
@@ -174,12 +170,10 @@ class Process:
     imports: list[str] = field(default_factory=list)
 
     def get_variable(self, name: str, default: Any = None) -> Any:
-        var_name = name.strip("${}")
-        return self.variables.get(var_name, default)
+        return self.variables.get(name, default)
 
     def set_variable(self, name: str, value: Any) -> None:
-        var_name = name.strip("${}")
-        self.variables[var_name] = value
+        self.variables[name] = value
 
 
 @dataclass
@@ -212,8 +206,7 @@ class ProcessBuilder:
         return self._process.name
 
     def add_variable(self, name: str, value: Any) -> ProcessBuilder:
-        var_name = name.strip("${}")
-        self._process.variables[var_name] = value
+        self._process.variables[name] = value
         return self
 
     def add_import(self, module: str) -> ProcessBuilder:

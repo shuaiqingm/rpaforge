@@ -50,6 +50,7 @@ class BridgeHandlers:
         self._heartbeat_interval: float = 30.0
         self._last_heartbeat: float = time.time()
         self._lifecycle_lock = asyncio.Lock()
+        self._pending_breakpoints: list[dict[str, Any]] = []
         self._ensure_activities_registered()
 
     def _ensure_activities_registered(self) -> None:
@@ -150,6 +151,23 @@ class BridgeHandlers:
             )
 
         self._runner.on_cancel(on_cancel)
+
+    def _apply_pending_breakpoints(self) -> None:
+        if not self._runner or not self._pending_breakpoints:
+            return
+
+        for bp_data in self._pending_breakpoints:
+            try:
+                self._runner.add_breakpoint(
+                    node_id=bp_data.get("nodeId", ""),
+                    line=bp_data.get("line", 0),
+                    condition=bp_data.get("condition"),
+                    hit_condition=bp_data.get("hitCondition"),
+                )
+            except Exception:
+                pass
+
+        self._pending_breakpoints.clear()
 
     def _handle_ping(self, _params: dict) -> dict[str, Any]:
         self._last_heartbeat = time.time()
@@ -381,6 +399,7 @@ class BridgeHandlers:
                     kwargs=activity_data.get("kwargs", {}),
                     line=activity_data.get("line", 0),
                     node_id=activity_data.get("nodeId", ""),
+                    output_variable=activity_data.get("outputVariable", ""),
                 )
                 task.activities.append(activity)
 
@@ -388,6 +407,7 @@ class BridgeHandlers:
 
         self._runner = self._engine._runner
         self._setup_runner_callbacks()
+        self._apply_pending_breakpoints()
 
         return self._engine.run(process)
 
@@ -424,13 +444,27 @@ class BridgeHandlers:
         return {"status": "not_paused"}
 
     def _handle_set_breakpoint(self, params: dict) -> dict[str, Any]:
-        if not self._runner:
-            return {"error": "no_runner"}
-
         node_id = params.get("nodeId", "")
         line = params.get("line", 0)
         condition = params.get("condition")
         hit_condition = params.get("hitCondition")
+
+        if not self._runner:
+            bp_data = {
+                "nodeId": node_id,
+                "line": line,
+                "condition": condition,
+                "hitCondition": hit_condition,
+            }
+            self._pending_breakpoints.append(bp_data)
+
+            return {
+                "breakpointId": f"pending-{len(self._pending_breakpoints)}",
+                "nodeId": node_id,
+                "line": line,
+                "enabled": True,
+                "pending": True,
+            }
 
         bp = self._runner.add_breakpoint(
             node_id=node_id,

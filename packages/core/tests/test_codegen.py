@@ -386,7 +386,7 @@ class TestWebUIActivities:
                             "library": "WebUI",
                             "activity": "Get Element Text",
                             "args": ["#result"],
-                            "output_variable": "${text}",
+                            "output_variable": "text",
                         }
                     },
                 },

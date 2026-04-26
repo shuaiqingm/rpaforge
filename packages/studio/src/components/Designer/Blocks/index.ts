@@ -30,18 +30,33 @@ import { SubDiagramCallBlock } from './SubDiagramCallBlock';
 import { ActivityBlock } from './ActivityBlock';
 import { withBreakpoint } from './withBreakpoint';
 
+// Create wrapped components once at module level to prevent recreation
+const StartBlockWithBreakpoint = withBreakpoint(StartBlock);
+const EndBlockWithBreakpoint = withBreakpoint(EndBlock);
+const IfBlockWithBreakpoint = withBreakpoint(IfBlock);
+const SwitchBlockWithBreakpoint = withBreakpoint(SwitchBlock);
+const WhileBlockWithBreakpoint = withBreakpoint(WhileBlock);
+const ForEachBlockWithBreakpoint = withBreakpoint(ForEachBlock);
+const ParallelBlockWithBreakpoint = withBreakpoint(ParallelBlock);
+const RetryScopeBlockWithBreakpoint = withBreakpoint(RetryScopeBlock);
+const TryCatchBlockWithBreakpoint = withBreakpoint(TryCatchBlock);
+const ThrowBlockWithBreakpoint = withBreakpoint(ThrowBlock);
+const AssignBlockWithBreakpoint = withBreakpoint(AssignBlock);
+const SubDiagramCallBlockWithBreakpoint = withBreakpoint(SubDiagramCallBlock);
+const ActivityBlockWithBreakpoint = withBreakpoint(ActivityBlock);
+
 export const blockNodeTypes: NodeTypes = {
-  start: withBreakpoint(StartBlock),
-  end: withBreakpoint(EndBlock),
-  if: withBreakpoint(IfBlock),
-  switch: withBreakpoint(SwitchBlock),
-  while: withBreakpoint(WhileBlock),
-  'for-each': withBreakpoint(ForEachBlock),
-  parallel: withBreakpoint(ParallelBlock),
-  'retry-scope': withBreakpoint(RetryScopeBlock),
-  'try-catch': withBreakpoint(TryCatchBlock),
-  throw: withBreakpoint(ThrowBlock),
-  assign: withBreakpoint(AssignBlock),
-  'sub-diagram-call': withBreakpoint(SubDiagramCallBlock),
-  activity: withBreakpoint(ActivityBlock),
+  start: StartBlockWithBreakpoint,
+  end: EndBlockWithBreakpoint,
+  if: IfBlockWithBreakpoint,
+  switch: SwitchBlockWithBreakpoint,
+  while: WhileBlockWithBreakpoint,
+  'for-each': ForEachBlockWithBreakpoint,
+  parallel: ParallelBlockWithBreakpoint,
+  'retry-scope': RetryScopeBlockWithBreakpoint,
+  'try-catch': TryCatchBlockWithBreakpoint,
+  throw: ThrowBlockWithBreakpoint,
+  assign: AssignBlockWithBreakpoint,
+  'sub-diagram-call': SubDiagramCallBlockWithBreakpoint,
+  activity: ActivityBlockWithBreakpoint,
 };

@@ -301,7 +301,9 @@ class PythonCodeGenerator:
                 else (
                     list(activity_values.values())
                     if activity_values
-                    else list(params.values()) if params else []
+                    else list(params.values())
+                    if params
+                    else []
                 )
             )
             enriched_block_data = {
@@ -606,14 +608,13 @@ class PythonCodeGenerator:
         method_name = activity_name.lower().replace(" ", "_")
 
         if args:
-            args_str = ", ".join(repr(a) for a in args)
+            args_str = ", ".join(self._format_argument(a) for a in args)
             call = f"{library.lower()}.{method_name}({args_str})"
         else:
             call = f"{library.lower()}.{method_name}()"
 
         if output_variable:
-            var_name = output_variable.strip("${}")
-            return [f"{prefix}{var_name} = {call}"]
+            return [f"{prefix}{output_variable} = {call}"]
 
         return [f"{prefix}{call}"]
 
@@ -665,6 +666,64 @@ class PythonCodeGenerator:
         if safe and safe[0].isdigit():
             safe = "_" + safe
         return safe or "process"
+
+    def _format_argument(self, value: Any) -> str:
+        """Format an argument for Python code generation.
+
+        Uses Python syntax: variable references are not quoted,
+        string literals must be explicitly quoted by the user.
+        """
+        if not isinstance(value, str):
+            return repr(value)
+
+        # If the value is already a quoted string, use it as-is
+        if (value.startswith('"') and value.endswith('"')) or (
+            value.startswith("'") and value.endswith("'")
+        ):
+            return value
+
+        # Check if it looks like a variable reference
+        if self._is_variable_reference(value):
+            return value
+
+        # Otherwise, treat as a string literal
+        return repr(value)
+
+    def _is_variable_reference(self, value: str) -> bool:
+        """Check if a string value should be treated as a variable reference.
+
+        Returns True if the value looks like a Python variable name.
+        """
+        if not value or not isinstance(value, str):
+            return False
+
+        # Exclude paths (contain / or \ or :)
+        if value.startswith(("'", '"', "/", "\\")) or ":" in value[:3]:
+            return False
+
+        # Exclude numeric literals
+        if value.isdigit():
+            return False
+
+        # Exclude boolean/None literals
+        if value in ("True", "False", "None"):
+            return False
+
+        # Check if it's a valid Python identifier
+        if value.isidentifier():
+            return True
+
+        # Check for attribute access (e.g., "obj.attr")
+        if "." in value:
+            parts = value.split(".")
+            return all(part.isidentifier() for part in parts)
+
+        # Check for indexing (e.g., "list[0]")
+        if "[" in value and "]" in value:
+            base = value.split("[")[0]
+            return base.isidentifier()
+
+        return False
 
     def generate_project(
         self,
