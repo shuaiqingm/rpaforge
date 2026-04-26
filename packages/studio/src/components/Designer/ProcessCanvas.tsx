@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
   type Connection,
@@ -53,6 +53,10 @@ interface QuickAddState {
 }
 
 const logger = createLogger('ProcessCanvas');
+
+// Define node and edge types outside component to prevent recreation
+const nodeTypes = blockNodeTypes;
+const edgeTypesConfig = edgeTypes;
 
 const ProcessCanvasInner: React.FC = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -511,8 +515,8 @@ const ProcessCanvasInner: React.FC = () => {
         onNodeDoubleClick={onNodeDoubleClick}
         onNodeContextMenu={onNodeContextMenu}
         onPaneContextMenu={onPaneContextMenu}
-        nodeTypes={blockNodeTypes}
-        edgeTypes={edgeTypes}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypesConfig}
         deleteKeyCode={['Backspace', 'Delete']}
         selectionOnDrag
         panOnDrag={[1, 2]}

@@ -116,6 +116,12 @@ class DiagramConverter:
                 activity = self._create_activity(node)
                 if activity:
                     task.activities.append(activity)
+                
+                # Continue to next nodes after activity
+                successors = graph.get(node_id, [])
+                for next_id, _ in reversed(successors):
+                    if next_id not in branch_visited:
+                        stack.append((next_id, branch_visited.copy(), None))
 
             elif block_type == "if":
                 self._push_if_branches(node_id, graph, stack, branch_visited)
@@ -229,7 +235,9 @@ class DiagramConverter:
             else (
                 list(activity_values.values())
                 if activity_values
-                else list(params.values()) if params else []
+                else list(params.values())
+                if params
+                else []
             )
         )
 

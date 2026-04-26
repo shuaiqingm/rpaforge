@@ -299,7 +299,7 @@ class ProcessRunner:
                 self._step_mode = None
                 self._pause_event.clear()
                 self._notify_pause()
-                self._pause_event.wait()
+            self._pause_event.wait()
 
         self._pause_event.wait()
 
@@ -317,7 +317,7 @@ class ProcessRunner:
                 self._step_mode = None
                 self._pause_event.clear()
                 self._notify_pause()
-                self._pause_event.wait()
+            self._pause_event.wait()
 
     def _check_breakpoint(self, activity: ActivityCall) -> Breakpoint | None:
         for bp in self._breakpoints.values():
@@ -364,7 +364,7 @@ class ProcessRunner:
             self._state = RunnerState.PAUSED
             self._pause_event.clear()
             self._notify_pause()
-            self._pause_event.wait()
+        self._pause_event.wait()
 
     def _notify_pause(self) -> None:
         frame = self.get_current_frame()

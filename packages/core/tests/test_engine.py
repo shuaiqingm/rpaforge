@@ -178,7 +178,6 @@ class TestProcess:
         process = Process(name="Test")
         process.set_variable("name", "value")
         assert process.get_variable("name") == "value"
-        assert process.get_variable("${name}") == "value"
 
     def test_get_variable_default(self):
         process = Process(name="Test")

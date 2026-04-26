@@ -156,37 +156,45 @@ class ExecutionContext:
             self.call_stack = []
 
     def get_variable(self, name: str, default: Any = None) -> Any:
-        var_name = name.strip("${}")
-        return self.variables.get(var_name, default)
+        return self.variables.get(name, default)
 
     def set_variable(self, name: str, value: Any) -> None:
-        var_name = name.strip("${}")
-        self.variables[var_name] = value
+        self.variables[name] = value
 
     def resolve_value(self, value: Any) -> Any:
-        if isinstance(value, str) and "${" in value:
-            return self._resolve_variables(value)
+        if isinstance(value, str) and value and self._is_variable_reference(value):
+            return self.variables.get(value, value)
+
         if isinstance(value, (list, tuple)):
             return [self.resolve_value(v) for v in value]
         if isinstance(value, dict):
             return {k: self.resolve_value(v) for k, v in value.items()}
         return value
 
-    def _resolve_variables(self, text: str) -> Any:
-        pattern = r"\$\{([^}]+)\}"
+    def _is_variable_reference(self, value: str) -> bool:
+        if not value or not isinstance(value, str):
+            return False
 
-        def replace_var(match: re.Match) -> str:
-            var_name = match.group(1)
-            value = self.get_variable(var_name, match.group(0))
-            return str(value) if not isinstance(value, str) else value
+        if value.startswith(("'", '"', "/", "\\")) or ":" in value[:3]:
+            return False
 
-        result = re.sub(pattern, replace_var, text)
+        if value.isdigit() or value in ("True", "False", "None"):
+            return False
 
-        if re.fullmatch(pattern, text):
-            var_name = re.match(pattern, text).group(1)
-            return self.get_variable(var_name, text)
-
-        return result
+        # Check if it's a valid Python identifier (potential variable)
+        is_var = value.isidentifier()
+        
+        if not is_var:
+            # Check for attribute access (e.g., "obj.attr")
+            if "." in value:
+                parts = value.split(".")
+                is_var = all(part.isidentifier() for part in parts)
+            # Check for indexing (e.g., "list[0]")
+            elif "[" in value and "]" in value:
+                base = value.split("[")[0]
+                is_var = base.isidentifier()
+        
+        return is_var
 
 
 class ProcessExecutor:
@@ -353,11 +361,7 @@ class ProcessExecutor:
                         result["retry_attempts"] = retry_attempts
 
                     if activity.output_variable and output is not None:
-                        var_name = activity.output_variable.strip("${}")
-                        self._context.set_variable(var_name, output)
-                        logger.debug(
-                            f"Saved output to variable: {var_name} = {output!r}"
-                        )
+                        self._context.set_variable(activity.output_variable, output)
 
                     break
 
