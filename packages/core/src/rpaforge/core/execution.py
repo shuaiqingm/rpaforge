@@ -66,6 +66,31 @@ class ActivityResult:
 
 
 @dataclass
+class ParallelGroup:
+    """A set of activity branches to execute concurrently.
+
+    Each branch is an independent list of ActivityCall objects.  All branches
+    run in separate threads; the group completes when every branch finishes.
+    If any branch fails and ``fail_fast`` is True the remaining branches are
+    allowed to finish their current step before the error is raised.
+    """
+
+    branches: list[list[ActivityCall]] = field(default_factory=list)
+    node_id: str = ""
+    fail_fast: bool = True
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "type": "parallel",
+            "node_id": self.node_id,
+            "branches": [
+                [a.to_dict() for a in branch] for branch in self.branches
+            ],
+            "fail_fast": self.fail_fast,
+        }
+
+
+@dataclass
 class Variable:
     """A process variable."""
 
@@ -78,7 +103,7 @@ class Task:
     """A task within a process (equivalent to RF TestCase)."""
 
     name: str
-    activities: list[ActivityCall] = field(default_factory=list)
+    activities: list[ActivityCall | ParallelGroup] = field(default_factory=list)
     setup: ActivityCall | None = None
     teardown: ActivityCall | None = None
     tags: list[str] = field(default_factory=list)
@@ -120,6 +145,18 @@ class TaskBuilder:
                 continue_on_error=continue_on_error,
                 output_variable=output_variable,
             )
+        )
+        return self
+
+    def add_parallel_group(
+        self,
+        branches: list[list[ActivityCall]],
+        node_id: str = "",
+        fail_fast: bool = True,
+    ) -> TaskBuilder:
+        """Add a parallel group: all branches run concurrently."""
+        self._task.activities.append(
+            ParallelGroup(branches=branches, node_id=node_id, fail_fast=fail_fast)
         )
         return self
 

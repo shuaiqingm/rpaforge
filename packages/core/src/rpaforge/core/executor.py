@@ -6,6 +6,7 @@ Native Python execution engine without Robot Framework.
 
 from __future__ import annotations
 
+import concurrent.futures
 import datetime
 import logging
 import threading
@@ -24,6 +25,7 @@ from rpaforge.core.execution import (
     ExecutionContext,
     ExecutionResult,
     ExecutionStatus,
+    ParallelGroup,
     Process,
     Task,
 )
@@ -307,14 +309,21 @@ class ProcessExecutor:
             if task.setup:
                 self._run_activity(task.setup)
 
-            for activity in task.activities:
-                act_result = self._run_activity(activity)
-                result["activities"].append(act_result)
-
-                if act_result["status"] == ExecutionStatus.FAIL:
-                    result["status"] = ExecutionStatus.FAIL
-                    result["error"] = act_result.get("error")
-                    break
+            for item in task.activities:
+                if isinstance(item, ParallelGroup):
+                    par_result = self._run_parallel_group(item)
+                    result["activities"].append(par_result)
+                    if par_result["status"] == ExecutionStatus.FAIL:
+                        result["status"] = ExecutionStatus.FAIL
+                        result["error"] = par_result.get("error")
+                        break
+                else:
+                    act_result = self._run_activity(item)
+                    result["activities"].append(act_result)
+                    if act_result["status"] == ExecutionStatus.FAIL:
+                        result["status"] = ExecutionStatus.FAIL
+                        result["error"] = act_result.get("error")
+                        break
 
         except StopExecution:
             result["status"] = ExecutionStatus.FAIL
@@ -337,6 +346,55 @@ class ProcessExecutor:
             self._context.task = None
 
         return result
+
+    def _run_parallel_group(self, group: ParallelGroup) -> dict[str, Any]:
+        """Execute all branches of a ParallelGroup concurrently.
+
+        Each branch runs in its own thread.  Results are collected after all
+        threads finish (or after the first failure when fail_fast=True).
+        """
+        start_time = perf_counter()
+        branch_results: list[list[dict[str, Any]]] = [[] for _ in group.branches]
+        branch_errors: list[Exception | None] = [None] * len(group.branches)
+
+        def run_branch(index: int, activities: list[ActivityCall]) -> None:
+            for act in activities:
+                try:
+                    res = self._run_activity(act)
+                    branch_results[index].append(res)
+                    if res["status"] == ExecutionStatus.FAIL:
+                        branch_errors[index] = Exception(res.get("error", "branch failed"))
+                        return
+                except Exception as exc:
+                    branch_errors[index] = exc
+                    return
+
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=len(group.branches), thread_name_prefix="parallel_branch"
+        ) as pool:
+            futures = {
+                pool.submit(run_branch, i, branch): i
+                for i, branch in enumerate(group.branches)
+            }
+            concurrent.futures.wait(futures)
+
+        failed_branches = [i for i, err in enumerate(branch_errors) if err is not None]
+        status = ExecutionStatus.FAIL if failed_branches else ExecutionStatus.PASS
+        error_msg = "; ".join(
+            f"branch {i}: {branch_errors[i]}" for i in failed_branches
+        ) if failed_branches else None
+
+        if status == ExecutionStatus.FAIL:
+            logger.error(f"ParallelGroup {group.node_id!r}: {error_msg}")
+
+        return {
+            "type": "parallel",
+            "node_id": group.node_id,
+            "status": status,
+            "error": error_msg,
+            "branches": branch_results,
+            "elapsed_ms": int((perf_counter() - start_time) * 1000),
+        }
 
     def _run_activity(self, activity: ActivityCall) -> dict[str, Any]:
         start_time = perf_counter()

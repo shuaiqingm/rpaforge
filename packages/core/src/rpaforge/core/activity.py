@@ -27,6 +27,7 @@ class ActivityType(Enum):
     CONTAINER = "container"
     ERROR_HANDLER = "error_handler"
     CODE = "code"
+    PARALLEL = "parallel"
 
 
 @dataclass
