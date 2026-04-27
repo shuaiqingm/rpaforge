@@ -14,21 +14,24 @@ import traceback
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from time import perf_counter
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from rpaforge.core.activity import (
     LIBRARY_REGISTRY,
 )
 from rpaforge.core.execution import (
     ActivityCall,
+    ExecutionContext,
     ExecutionResult,
     ExecutionStatus,
     Process,
     Task,
 )
-
-if TYPE_CHECKING:
-    pass
+from rpaforge.core.interfaces import (
+    ExpressionEvaluator,
+    LibraryProvider,
+    TimeoutHandler,
+)
 
 # Import safe execution modules
 try:
@@ -54,6 +57,71 @@ except ImportError:
     SubprocessExecutor = None
 
 logger = logging.getLogger("rpaforge")
+
+
+class DefaultLibraryProvider:
+    """Default implementation using the global LIBRARY_REGISTRY."""
+
+    def get_library(self, name: str) -> type | None:
+        entry = LIBRARY_REGISTRY.get(name)
+        if entry is None:
+            return None
+        cls, _ = entry
+        return cls
+
+    def instantiate_library(self, cls: type) -> Any:
+        return cls()
+
+
+class ThreadingTimeoutHandler:
+    """Timeout execution using SubprocessExecutor or threading fallback."""
+
+    def execute_with_timeout(
+        self,
+        func: Callable[..., Any],
+        args: tuple[Any, ...],
+        timeout_ms: int,
+    ) -> Any:
+        if _USE_SUBPROCESS and SubprocessExecutor is not None:
+            # func here is a bound method; extract library path and activity name
+            # for SubprocessExecutor which needs module-level access.
+            # Fall through to threading when the method is already resolved.
+            pass
+
+        result_container: list[Any] = []
+        exception_container: list[Exception] = []
+        _thread_lock = threading.Lock()
+
+        def run_in_thread() -> None:
+            try:
+                output = func(*args)
+                with _thread_lock:
+                    result_container.append(output)
+            except Exception as e:
+                with _thread_lock:
+                    exception_container.append(e)
+
+        thread = threading.Thread(target=run_in_thread, daemon=True)
+        thread.start()
+        thread.join(timeout=timeout_ms / 1000.0)
+
+        with _thread_lock:
+            timed_out = thread.is_alive()
+            has_result = bool(result_container)
+            res = result_container[0] if has_result else None
+
+        if timed_out:
+            raise TimeoutError(timeout_ms)
+        if exception_container:
+            raise exception_container[0]
+        return res
+
+
+class SafeExpressionEvaluator:
+    """Expression evaluator backed by safe_eval."""
+
+    def evaluate(self, expression: str, variables: dict[str, Any]) -> Any:
+        return safe_eval(expression, variables)
 
 
 @dataclass
@@ -140,66 +208,18 @@ class StopExecution(Exception):
     pass
 
 
-@dataclass
-class ExecutionContext:
-    """Runtime execution context."""
-
-    variables: dict[str, Any]
-    process: Process | None = None
-    task: Task | None = None
-    current_activity: ActivityCall | None = None
-    call_stack: list[ActivityCall] = None
-
-    def __post_init__(self):
-        if self.call_stack is None:
-            self.call_stack = []
-
-    def get_variable(self, name: str, default: Any = None) -> Any:
-        return self.variables.get(name, default)
-
-    def set_variable(self, name: str, value: Any) -> None:
-        self.variables[name] = value
-
-    def resolve_value(self, value: Any) -> Any:
-        if isinstance(value, str) and value and self._is_variable_reference(value):
-            return self.variables.get(value, value)
-
-        if isinstance(value, (list, tuple)):
-            return [self.resolve_value(v) for v in value]
-        if isinstance(value, dict):
-            return {k: self.resolve_value(v) for k, v in value.items()}
-        return value
-
-    def _is_variable_reference(self, value: str) -> bool:
-        if not value or not isinstance(value, str):
-            return False
-
-        if value.startswith(("'", '"', "/", "\\")) or ":" in value[:3]:
-            return False
-
-        if value.isdigit() or value in ("True", "False", "None"):
-            return False
-
-        # Check if it's a valid Python identifier (potential variable)
-        is_var = value.isidentifier()
-
-        if not is_var:
-            # Check for attribute access (e.g., "obj.attr")
-            if "." in value:
-                parts = value.split(".")
-                is_var = all(part.isidentifier() for part in parts)
-            # Check for indexing (e.g., "list[0]")
-            elif "[" in value and "]" in value:
-                base = value.split("[")[0]
-                is_var = base.isidentifier()
-
-        return is_var
-
-
 class ProcessExecutor:
     """Native Python executor for RPAForge processes."""
 
-    def __init__(self):
+    def __init__(
+        self,
+        library_provider: LibraryProvider | None = None,
+        timeout_handler: TimeoutHandler | None = None,
+        expression_evaluator: ExpressionEvaluator | None = None,
+    ) -> None:
+        self._library_provider = library_provider or DefaultLibraryProvider()
+        self._timeout_handler = timeout_handler or ThreadingTimeoutHandler()
+        self._evaluator = expression_evaluator or SafeExpressionEvaluator()
         self._libraries: dict[str, Any] = {}
         self._listeners: list[Callable] = []
         self._context: ExecutionContext | None = None
@@ -215,6 +235,9 @@ class ProcessExecutor:
     def remove_listener(self, callback: Callable) -> None:
         if callback in self._listeners:
             self._listeners.remove(callback)
+
+    def cancel(self) -> None:
+        pass
 
     def run(self, process: Process) -> ExecutionResult:
         start_time = perf_counter()
@@ -469,9 +492,9 @@ class ProcessExecutor:
         lib_instance = self._libraries.get(library)
 
         if lib_instance is None:
-            cls, _ = LIBRARY_REGISTRY.get(library, (None, None))
+            cls = self._library_provider.get_library(library)
             if cls is not None:
-                lib_instance = cls()
+                lib_instance = self._library_provider.instantiate_library(cls)
                 self._libraries[library] = lib_instance
             else:
                 raise ExecutionError(f"Library '{library}' not found")
@@ -493,10 +516,7 @@ class ProcessExecutor:
 
         # Use subprocess executor if available for safe timeout handling
         if _USE_SUBPROCESS and SubprocessExecutor is not None:
-            # Get library path from the library name
-            # e.g., "DesktopUI" -> "rpaforge_libraries.DesktopUI"
             lib_path = f"rpaforge_libraries.{library}"
-
             executor = SubprocessExecutor()
             try:
                 return executor.execute_with_timeout(
@@ -508,41 +528,11 @@ class ProcessExecutor:
                 )
             finally:
                 executor.close()
-        else:
-            # Fallback to threading if subprocess not available
-            # This maintains backward compatibility
-            result_container: list[Any] = []
-            exception_container: list[Exception] = []
-            # Protect shared state between the spawned thread and this thread.
-            _thread_lock = threading.Lock()
 
-            def run_in_thread() -> None:
-                try:
-                    output = method(*args, **kwargs)
-                    with _thread_lock:
-                        result_container.append(output)
-                except Exception as e:
-                    with _thread_lock:
-                        exception_container.append(e)
+        def _call(*a: Any) -> Any:
+            return method(*a[: len(args)], **kwargs)
 
-            thread = threading.Thread(target=run_in_thread, daemon=True)
-            thread.start()
-            thread.join(timeout=timeout_ms / 1000.0)
-
-            with _thread_lock:
-                timed_out = thread.is_alive()
-                has_exception = bool(exception_container)
-                exc = exception_container[0] if has_exception else None
-                has_result = bool(result_container)
-                res = result_container[0] if has_result else None
-
-            if timed_out:
-                raise TimeoutError(timeout_ms)
-
-            if has_exception:
-                raise exc
-
-            return res
+        return self._timeout_handler.execute_with_timeout(_call, args, timeout_ms)
 
     def _notify(self, event_type: str, *args: Any) -> None:
         for listener in self._listeners:
