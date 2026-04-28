@@ -24,11 +24,14 @@ const LogLevelBadge: React.FC<{ level: LogLevel }> = ({ level }) => {
   );
 };
 
-const LogLine: React.FC<{ entry: LogEntry }> = ({ entry }) => {
+const LogLine: React.FC<{ entry: LogEntry; index: number }> = ({ entry, index }) => {
   const timeStr = entry.timestamp.toLocaleTimeString();
 
   return (
     <div className="log-entry flex items-start gap-2 px-2 py-1 hover:bg-slate-50 dark:hover:bg-slate-800 font-mono text-sm">
+      <span className="text-slate-400 text-xs w-10 text-right flex-shrink-0 select-none">
+        {String(index + 1).padStart(3, ' ')}
+      </span>
       <span className="text-slate-400 text-xs flex-shrink-0">{timeStr}</span>
       <LogLevelBadge level={entry.level} />
       {entry.source && (
@@ -157,7 +160,7 @@ const ConsoleOutput: React.FC = () => {
             )}
           </div>
         ) : (
-          filteredLogs.map((entry) => <LogLine key={entry.id} entry={entry} />)
+          filteredLogs.map((entry, index) => <LogLine key={entry.id} entry={entry} index={index} />)
         )}
       </div>
 
