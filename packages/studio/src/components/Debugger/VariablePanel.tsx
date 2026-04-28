@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { FiX, FiEye, FiEyeOff, FiPlus, FiTrash2 } from 'react-icons/fi';
+import ConfirmDialog from '../Common/ConfirmDialog';
 import { useDebuggerStore } from '../../stores/debuggerStore';
 import { useVariableStore } from '../../stores/variableStore';
 import type { Variable } from '../../types/engine';
@@ -17,8 +18,21 @@ const VariableItem: React.FC<{
   const valueDisplay = useMemo(() => {
     if (variable.value === null) return 'null';
     if (variable.value === undefined) return 'undefined';
-    if (typeof variable.value === 'string') return `"${variable.value}"`;
-    if (typeof variable.value === 'object') return '{...}';
+    if (typeof variable.value === 'string') {
+      const truncated = variable.value.length > 30
+        ? variable.value.slice(0, 30) + '...'
+        : variable.value;
+      return `"${truncated}"`;
+    }
+    if (Array.isArray(variable.value)) {
+      return `Array(${variable.value.length})`;
+    }
+    if (typeof variable.value === 'object') {
+      const keys = Object.keys(variable.value);
+      const preview = keys.slice(0, 3).join(', ');
+      const suffix = keys.length > 3 ? ', ...' : '';
+      return `{${preview}${suffix}}`;
+    }
     return String(variable.value);
   }, [variable.value]);
 
@@ -111,6 +125,7 @@ const VariablePanel: React.FC = () => {
   
   const [activeTab, setActiveTab] = useState<'variables' | 'watch' | 'process'>('variables');
   const [showVariableDialog, setShowVariableDialog] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const watchedVars = useMemo(() => {
     return variables.filter((v) => watchedVariables.has(v.name));
@@ -192,6 +207,7 @@ const VariablePanel: React.FC = () => {
               className="p-1 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900 rounded"
               onClick={() => setShowVariableDialog(true)}
               title="Create variable"
+              aria-label="Create variable"
             >
               <FiPlus className="w-4 h-4" />
             </button>
@@ -201,6 +217,7 @@ const VariablePanel: React.FC = () => {
               className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded"
               onClick={clearWatchedVariables}
               title="Clear all watches"
+              aria-label="Clear all watches"
             >
               <FiX className="w-4 h-4" />
             </button>
@@ -263,7 +280,7 @@ const VariablePanel: React.FC = () => {
                   {getScopeBadge(variable.scope)}
                   <span className="text-xs text-slate-400">{variable.type}</span>
                   <button
-                    onClick={() => removeVariable(variable.id)}
+                    onClick={() => setDeleteConfirmId(variable.id)}
                     className="p-0.5 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100"
                     title="Delete variable"
                   >
@@ -300,6 +317,19 @@ const VariablePanel: React.FC = () => {
         onCreate={handleCreateVariable}
         existingVariables={processVariables.map((v) => v.name)}
         variables={variableOptions}
+      />
+
+      <ConfirmDialog
+        open={!!deleteConfirmId}
+        title="Delete variable"
+        message="Are you sure you want to delete this variable? This action cannot be undone."
+        confirmLabel="Delete"
+        destructive
+        onConfirm={() => {
+          if (deleteConfirmId) removeVariable(deleteConfirmId);
+          setDeleteConfirmId(null);
+        }}
+        onCancel={() => setDeleteConfirmId(null)}
       />
     </div>
   );
