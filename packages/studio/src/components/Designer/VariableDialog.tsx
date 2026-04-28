@@ -90,13 +90,13 @@ const VariableDialog: React.FC<VariableDialogProps> = ({
   if (!isOpen) return null;
 
   const typeOptions = [
-    { value: 'any', label: 'Any', icon: '⬡' },
-    { value: 'string', label: 'String', icon: '📝' },
-    { value: 'number', label: 'Number', icon: '🔢' },
-    { value: 'boolean', label: 'Boolean', icon: '✓' },
-    { value: 'list', label: 'List', icon: '📋' },
-    { value: 'dict', label: 'Dictionary', icon: '📖' },
-    { value: 'secret', label: 'Secret', icon: '🔒' },
+    { value: 'any', label: 'Any', icon: '⬡', description: 'Any value type' },
+    { value: 'string', label: 'String', icon: '📝', description: 'Text: "hello", "name"' },
+    { value: 'number', label: 'Number', icon: '🔢', description: 'Numeric: 42, 3.14' },
+    { value: 'boolean', label: 'Boolean', icon: '✓', description: 'True or False' },
+    { value: 'list', label: 'List', icon: '📋', description: 'Ordered collection: [1, 2, 3]' },
+    { value: 'dict', label: 'Dictionary', icon: '📖', description: 'Key-value pairs: {key: value}' },
+    { value: 'secret', label: 'Secret', icon: '🔒', description: 'Hidden password or token' },
   ];
 
   const scopeOptions = [
@@ -152,6 +152,7 @@ const VariableDialog: React.FC<VariableDialogProps> = ({
                 <button
                   key={opt.value}
                   type="button"
+                  title={opt.description}
                   onClick={() => {
                     setType(opt.value as VariableDefinition['type']);
                     if (opt.value === 'secret') setShowValue(true);
@@ -167,6 +168,9 @@ const VariableDialog: React.FC<VariableDialogProps> = ({
                 </button>
               ))}
             </div>
+            <p className="text-xs text-slate-500 mt-2">
+              {typeOptions.find((o) => o.value === type)?.description}
+            </p>
           </fieldset>
 
           <div>
