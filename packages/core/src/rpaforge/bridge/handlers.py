@@ -738,7 +738,9 @@ class BridgeHandlers:
                         error_entry = {
                             "line": location.get("line", 1),
                             "column": location.get("column", 0),
-                            "endLine": end_location.get("line", location.get("line", 1)),
+                            "endLine": end_location.get(
+                                "line", location.get("line", 1)
+                            ),
                             "endColumn": end_location.get("column", 0),
                             "message": message,
                             "code": f"{code_info.get('prefix', '')}{code_info.get('value', '')}",
@@ -750,7 +752,9 @@ class BridgeHandlers:
                         else:
                             warnings.append(error_entry)
                 except json.JSONDecodeError:
-                    logger.warning(f"Failed to parse ruff check output: {result.stdout}")
+                    logger.warning(
+                        f"Failed to parse ruff check output: {result.stdout}"
+                    )
 
             return {"errors": errors, "warnings": warnings}
         except subprocess.TimeoutExpired:
