@@ -8,6 +8,7 @@ import CodeToolbar from '../CodeEditor/CodeToolbar';
 import SnippetPanel from '../CodeEditor/SnippetPanel';
 import VariablesPanel from '../CodeEditor/VariablesPanel';
 import { useRPACompletions } from '../CodeEditor/hooks/useRPACompletions';
+import { useRPAHoverDocs } from '../CodeEditor/hooks/useRPAHoverDocs';
 import { useVariableStore } from '../../stores/variableStore';
 import type { Snippet } from '../CodeEditor/data/snippets';
 
@@ -57,114 +58,6 @@ const PythonCodeEditor: React.FC<PythonCodeEditorProps> = ({
 
       monaco.languages.register({ id: 'python' });
 
-      monaco.languages.setMonarchTokensProvider('python', {
-        defaultToken: '',
-        tokenPostfix: '.python',
-        keywords: [
-          'False', 'None', 'True', 'and', 'as', 'assert', 'async', 'await',
-          'break', 'class', 'continue', 'def', 'del', 'elif', 'else', 'except',
-          'finally', 'for', 'from', 'global', 'if', 'import', 'in', 'is',
-          'lambda', 'nonlocal', 'not', 'or', 'pass', 'raise', 'return', 'try',
-          'while', 'with', 'yield', 'print',
-        ],
-        builtins: [
-          'abs', 'all', 'any', 'bin', 'bool', 'bytearray', 'bytes', 'callable',
-          'chr', 'classmethod', 'compile', 'complex', 'delattr', 'dict', 'dir',
-          'divmod', 'enumerate', 'eval', 'exec', 'filter', 'float', 'format',
-          'frozenset', 'getattr', 'globals', 'hasattr', 'hash', 'help', 'hex',
-          'id', 'input', 'int', 'isinstance', 'issubclass', 'iter', 'len',
-          'list', 'locals', 'map', 'max', 'memoryview', 'min', 'next', 'object',
-          'oct', 'open', 'ord', 'pow', 'property', 'range', 'repr', 'reversed',
-          'round', 'set', 'setattr', 'slice', 'sorted', 'staticmethod', 'str',
-          'sum', 'super', 'tuple', 'type', 'vars', 'zip', '__import__',
-        ],
-        operators: [
-          '+', '-', '*', '**', '/', '//', '%', '@', '<<', '>>', '&', '|', '^',
-          '~', '<', '>', '<=', '>=', '==', '!=', '=', '+=', '-=', '*=', '/=',
-          '//=', '%=', '**=', '@=', '&=', '|=', '^=', '>>=', '<<=',
-        ],
-        symbols: /[=><!~?:&|+\-*^%]+/,
-        escapes: /\\(?:[abfnrtv"']|x[0-9A-Fa-f]{1,4}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})/,
-        tokenizer: {
-          root: [
-            [/[a-zA-Z_]\w*/, {
-              cases: {
-                '@keywords': 'keyword',
-                '@builtins': 'type.identifier',
-                '@default': 'identifier',
-              },
-            }],
-            { include: '@whitespace' },
-            [/[{}()[\]]/, '@brackets'],
-            [/[<>](?!@symbols)/, '@brackets'],
-            [/@symbols/, {
-              cases: {
-                '@operators': 'operator',
-                '@default': '',
-              },
-            }],
-            [/\d*\.\d+([eE][-+]?\d+)?/, 'number.float'],
-            [/0[xX][0-9a-fA-F]+/, 'number.hex'],
-            [/0[oO][0-7]+/, 'number.octal'],
-            [/0[bB][01]+/, 'number.binary'],
-            [/\d+/, 'number'],
-            [/[;,.]/, 'delimiter'],
-            [/"([^"\\]|\\.)*$/, 'string.invalid'],
-            [/'([^'\\]|\\.)*$/, 'string.invalid'],
-            [/"/, 'string', '@string_double'],
-            [/'/, 'string', '@string_single'],
-            [/f"/, 'string', '@fstring_double'],
-            [/f'/, 'string', '@fstring_single'],
-          ],
-          whitespace: [
-            [/[ \t\r\n]+/, ''],
-            [/#.*$/, 'comment'],
-            [/'''/, 'comment', '@docstring_single'],
-            [/"""/, 'comment', '@docstring_double'],
-          ],
-          docstring_single: [
-            [/[^']+/, 'comment'],
-            [/'''/, 'comment', '@pop'],
-            [/'/, 'comment'],
-          ],
-          docstring_double: [
-            [/[^"]+/, 'comment'],
-            [/"""/, 'comment', '@pop'],
-            [/"/, 'comment'],
-          ],
-          string_double: [
-            [/[^\\"]+/, 'string'],
-            [/@escapes/, 'string.escape'],
-            [/\\./, 'string.escape.invalid'],
-            [/"/, 'string', '@pop'],
-          ],
-          string_single: [
-            [/[^\\']+/, 'string'],
-            [/@escapes/, 'string.escape'],
-            [/\\./, 'string.escape.invalid'],
-            [/'/, 'string', '@pop'],
-          ],
-          fstring_double: [
-            [/[^\\{}"]+/, 'string'],
-            [/{/, 'delimiter.bracket', '@fstring_expr'],
-            [/@escapes/, 'string.escape'],
-            [/\\./, 'string.escape.invalid'],
-            [/"/, 'string', '@pop'],
-          ],
-          fstring_single: [
-            [/[^\\{}']+/, 'string'],
-            [/{/, 'delimiter.bracket', '@fstring_expr'],
-            [/@escapes/, 'string.escape'],
-            [/\\./, 'string.escape.invalid'],
-            [/'/, 'string', '@pop'],
-          ],
-          fstring_expr: [
-            [/\}/, 'delimiter.bracket', '@pop'],
-            { include: '@root' },
-          ],
-        },
-      });
-
       monaco.editor.setTheme('vs-dark');
 
       editor.onDidChangeCursorPosition((e) => {
@@ -183,6 +76,31 @@ const PythonCodeEditor: React.FC<PythonCodeEditorProps> = ({
       return dispose;
     }
   }, [activities, registerCompletions]);
+
+  useEffect(() => {
+    useRPAHoverDocs(editorRef.current, activities);
+  }, [activities]);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    const monaco = monacoRef.current;
+    if (!editor || !monaco) return;
+
+    const disposables = [
+      editor.addCommand(
+        monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyF,
+        () => handleFormat()
+      ),
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyG, () => {
+        const action = editor.getAction('editor.action.gotoLine');
+        action?.run();
+      }),
+    ];
+
+    return () => {
+      disposables.forEach((d) => d?.());
+    };
+  }, [handleFormat]);
 
   const handleFind = useCallback(() => {
     editorRef.current?.getAction('actions.find')?.run();
