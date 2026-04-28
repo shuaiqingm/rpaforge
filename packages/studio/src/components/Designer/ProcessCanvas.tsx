@@ -29,7 +29,7 @@ import { useSelectionStore } from '../../stores/selectionStore';
 import { useExecutionStore } from '../../stores/executionStore';
 import { useDebuggerStore } from '../../stores/debuggerStore';
 import { useDiagramStore } from '../../stores/diagramStore';
-import CanvasToolbar from './CanvasToolbar';
+import CanvasToolbar, { type EdgeTypeOption } from './CanvasToolbar';
 import CanvasContextMenu from './CanvasContextMenu';
 import QuickAddActivity from './QuickAddActivity';
 import '@reactflow/controls/dist/style.css';
@@ -62,7 +62,7 @@ const ProcessCanvasInner: React.FC = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
   const [snapToGrid, setSnapToGrid] = useState(true);
-  const [edgeType, setEdgeType] = useState<'default' | 'straight' | 'smoothstep' | 'bendable'>('smoothstep');
+  const [edgeType, setEdgeType] = useState<EdgeTypeOption>('smoothstep');
   const [isDragOver, setIsDragOver] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     isOpen: false,
@@ -90,6 +90,10 @@ const ProcessCanvasInner: React.FC = () => {
   const setSelectedNode = useSelectionStore((state) => state.setSelectedNode);
 
   const pushHistory = useHistoryStore((state) => state.pushHistory);
+  const undoHistory = useHistoryStore((state) => state.undo);
+  const redoHistory = useHistoryStore((state) => state.redo);
+  const undoStack = useHistoryStore((state) => state.undoStack);
+  const redoStack = useHistoryStore((state) => state.redoStack);
 
   const currentExecutingNodeId = useExecutionStore((state) => state.currentExecutingNodeId);
 
@@ -164,27 +168,7 @@ const ProcessCanvasInner: React.FC = () => {
   }, [setNodes, storeNodes]);
 
   useEffect(() => {
-    setEdges(storeEdges);
-  }, [setEdges, storeEdges]);
-
-  useEffect(() => {
-    setEdges((eds) => eds.map((ed) => ({ ...ed, type: edgeType })));
-  }, [edgeType, setEdges]);
-
-  useEffect(() => {
-    if (edgeType === 'bendable') {
-      setEdges((eds) => eds.map((ed) => ({ ...ed, type: 'bendable' })));
-    } else {
-      setEdges((eds) => eds.map((ed) => ({ ...ed, type: edgeType })));
-    }
-  }, [edgeType, setEdges]);
-
-  useEffect(() => {
-    if (edgeType === 'bendable') {
-      setEdges(storeEdges.map(ed => ({ ...ed, type: 'bendable' })));
-    } else {
-      setEdges(storeEdges);
-    }
+    setEdges(storeEdges.map(ed => ({ ...ed, type: edgeType })));
   }, [storeEdges, setEdges, edgeType]);
 
   useEffect(() => {
@@ -239,6 +223,20 @@ const ProcessCanvasInner: React.FC = () => {
             toast.success('Node duplicated');
           }
         }
+      } else if (isModKey && !event.shiftKey && event.key.toLowerCase() === 'z') {
+        event.preventDefault();
+        const snapshot = undoHistory(storeNodes, storeEdges);
+        if (snapshot) {
+          setNodes(snapshot.nodes);
+          setEdges(snapshot.edges.map(ed => ({ ...ed, type: edgeType })));
+        }
+      } else if (isModKey && (event.key.toLowerCase() === 'y' || (event.shiftKey && event.key.toLowerCase() === 'z'))) {
+        event.preventDefault();
+        const snapshot = redoHistory(storeNodes, storeEdges);
+        if (snapshot) {
+          setNodes(snapshot.nodes);
+          setEdges(snapshot.edges.map(ed => ({ ...ed, type: edgeType })));
+        }
       } else if (event.key === ' ' && isModKey) {
         event.preventDefault();
         const canvasRect = reactFlowWrapper.current?.getBoundingClientRect();
@@ -256,7 +254,7 @@ const ProcessCanvasInner: React.FC = () => {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedNodeId, copyNodes, pasteNodes, duplicateNodes, removeNode, addNode, addEdge, pushHistory, storeNodes, storeEdges, screenToFlowPosition, setSelectedNode]);
+  }, [selectedNodeId, copyNodes, pasteNodes, duplicateNodes, removeNode, addNode, addEdge, pushHistory, undoHistory, redoHistory, storeNodes, storeEdges, screenToFlowPosition, setSelectedNode, setNodes, setEdges, edgeType]);
 
   const onConnect = useCallback(
     (params: Connection) => {
@@ -493,7 +491,23 @@ const ProcessCanvasInner: React.FC = () => {
         snapToGrid={snapToGrid}
         onToggleSnapToGrid={() => setSnapToGrid(!snapToGrid)}
         edgeType={edgeType}
-        onToggleEdgeType={() => setEdgeType(edgeType === 'default' ? 'straight' : edgeType === 'straight' ? 'smoothstep' : edgeType === 'smoothstep' ? 'bendable' : 'default')}
+        onChangeEdgeType={setEdgeType}
+        canUndo={undoStack.length > 0}
+        canRedo={redoStack.length > 0}
+        onUndo={() => {
+          const snapshot = undoHistory(storeNodes, storeEdges);
+          if (snapshot) {
+            setNodes(snapshot.nodes);
+            setEdges(snapshot.edges.map(ed => ({ ...ed, type: edgeType })));
+          }
+        }}
+        onRedo={() => {
+          const snapshot = redoHistory(storeNodes, storeEdges);
+          if (snapshot) {
+            setNodes(snapshot.nodes);
+            setEdges(snapshot.edges.map(ed => ({ ...ed, type: edgeType })));
+          }
+        }}
       />
       <ReactFlow
         nodes={nodes}
