@@ -10,11 +10,11 @@ import pytest
 from rpaforge.core.subprocess_executor import SubprocessExecutor
 
 
-def _noop(library_path: str, activity_name: str, args: tuple, kwargs: dict) -> str:
+def _noop(_library_path: str, _activity_name: str, _args: tuple, _kwargs: dict) -> str:
     return "ok"
 
 
-def _slow(library_path: str, activity_name: str, args: tuple, kwargs: dict) -> str:
+def _slow(_library_path: str, _activity_name: str, _args: tuple, _kwargs: dict) -> str:
     time.sleep(10)
     return "done"
 
@@ -44,16 +44,14 @@ class TestSubprocessExecutorTimeout:
 
         original = mod.SubprocessExecutor._execute_in_subprocess
 
-        def slow_worker(self, library_path, activity_name, args, kwargs):
+        def slow_worker(_self, _library_path, _activity_name, _args, _kwargs):
             time.sleep(5)
             return "never"
 
         mod.SubprocessExecutor._execute_in_subprocess = slow_worker
         try:
             with pytest.raises((TimeoutError, Exception)):
-                ex.execute_with_timeout(
-                    "fake.lib", "fake_activity", timeout_ms=50
-                )
+                ex.execute_with_timeout("fake.lib", "fake_activity", timeout_ms=50)
         finally:
             mod.SubprocessExecutor._execute_in_subprocess = original
             ex.close()
@@ -62,7 +60,7 @@ class TestSubprocessExecutorTimeout:
         ex = SubprocessExecutor()
         import rpaforge.core.subprocess_executor as mod
 
-        def slow_worker(self, library_path, activity_name, args, kwargs):
+        def slow_worker(_self, _library_path, _activity_name, _args, _kwargs):
             time.sleep(5)
             return "never"
 
@@ -86,7 +84,7 @@ class TestSubprocessExecutorConcurrency:
         call_count = 0
         lock = threading.Lock()
 
-        def fast_worker(self, library_path, activity_name, args, kwargs):
+        def fast_worker(_self, _library_path, _activity_name, _args, _kwargs):
             return "ok"
 
         original = mod.SubprocessExecutor._execute_in_subprocess
