@@ -451,6 +451,69 @@ const schemas: Record<string, SchemaDefinition> = {
     required: ['dirPath'],
     additionalProperties: false,
   },
+
+  'fs:setProjectRoot': {
+    $schema: 'http://json-schema.org/draft-07/schema#',
+    $id: 'fs:setProjectRoot',
+    type: 'object',
+    properties: {
+      rootPath: {
+        type: 'string',
+        minLength: 1,
+        maxLength: 1024,
+      },
+    },
+    required: ['rootPath'],
+    additionalProperties: false,
+  },
+
+  'dialog:showOpen': {
+    $schema: 'http://json-schema.org/draft-07/schema#',
+    $id: 'dialog:showOpen',
+    type: 'object',
+    properties: {
+      title: { type: 'string', maxLength: 255 },
+      defaultPath: { type: 'string', maxLength: 1024 },
+      filters: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', maxLength: 100 },
+            extensions: { type: 'array', items: { type: 'string' } },
+          },
+          required: ['name', 'extensions'],
+        },
+      },
+      properties: {
+        type: 'array',
+        items: { type: 'string' },
+      },
+    },
+    additionalProperties: false,
+  },
+
+  'dialog:showSave': {
+    $schema: 'http://json-schema.org/draft-07/schema#',
+    $id: 'dialog:showSave',
+    type: 'object',
+    properties: {
+      title: { type: 'string', maxLength: 255 },
+      defaultPath: { type: 'string', maxLength: 1024 },
+      filters: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', maxLength: 100 },
+            extensions: { type: 'array', items: { type: 'string' } },
+          },
+          required: ['name', 'extensions'],
+        },
+      },
+    },
+    additionalProperties: false,
+  },
 };
 
 export { schemas };

@@ -1,6 +1,15 @@
-import React, { useState, useCallback } from 'react';
-import Editor from '@monaco-editor/react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import Editor, { type OnMount } from '@monaco-editor/react';
+import type * as Monaco from 'monaco-editor';
 import { FiX, FiCheck, FiMaximize2, FiMinimize2 } from 'react-icons/fi';
+
+import StatusBar from '../CodeEditor/StatusBar';
+import CodeToolbar from '../CodeEditor/CodeToolbar';
+import SnippetPanel from '../CodeEditor/SnippetPanel';
+import VariablesPanel from '../CodeEditor/VariablesPanel';
+import { useRPACompletions } from '../CodeEditor/hooks/useRPACompletions';
+import { useVariableStore } from '../../stores/variableStore';
+import type { Snippet } from '../CodeEditor/data/snippets';
 
 interface PythonCodeEditorProps {
   isOpen: boolean;
@@ -19,22 +28,38 @@ const PythonCodeEditor: React.FC<PythonCodeEditorProps> = ({
 }) => {
   const [code, setCode] = useState(initialCode);
   const [isMaximized, setIsMaximized] = useState(false);
+  const [isSnippetPanelOpen, setIsSnippetPanelOpen] = useState(false);
+  const [isVariablesPanelOpen, setIsVariablesPanelOpen] = useState(false);
+  const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
+  const [isDirty, setIsDirty] = useState(false);
+
+  const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
+  const monacoRef = useRef<typeof Monaco | null>(null);
+
+  const { activities, registerCompletions } = useRPACompletions();
+  const variables = useVariableStore((state) => state.variables);
+
+  const closeAllPanels = useCallback(() => {
+    setIsSnippetPanelOpen(false);
+    setIsVariablesPanelOpen(false);
+  }, []);
 
   const handleSave = useCallback(() => {
     onSave(code);
+    setIsDirty(false);
     onClose();
   }, [code, onSave, onClose]);
 
-  const handleEditorMount = useCallback(
-    (_editor: unknown, monaco: unknown) => {
-      const monacoEditor = monaco as typeof import('monaco-editor');
+  const handleEditorDidMount: OnMount = useCallback(
+    (editor, monaco) => {
+      editorRef.current = editor;
+      monacoRef.current = monaco;
 
-      monacoEditor.languages.register({ id: 'python' });
+      monaco.languages.register({ id: 'python' });
 
-      monacoEditor.languages.setMonarchTokensProvider('python', {
+      monaco.languages.setMonarchTokensProvider('python', {
         defaultToken: '',
         tokenPostfix: '.python',
-
         keywords: [
           'False', 'None', 'True', 'and', 'as', 'assert', 'async', 'await',
           'break', 'class', 'continue', 'def', 'del', 'elif', 'else', 'except',
@@ -42,7 +67,6 @@ const PythonCodeEditor: React.FC<PythonCodeEditorProps> = ({
           'lambda', 'nonlocal', 'not', 'or', 'pass', 'raise', 'return', 'try',
           'while', 'with', 'yield', 'print',
         ],
-
         builtins: [
           'abs', 'all', 'any', 'bin', 'bool', 'bytearray', 'bytes', 'callable',
           'chr', 'classmethod', 'compile', 'complex', 'delattr', 'dict', 'dir',
@@ -54,17 +78,13 @@ const PythonCodeEditor: React.FC<PythonCodeEditorProps> = ({
           'round', 'set', 'setattr', 'slice', 'sorted', 'staticmethod', 'str',
           'sum', 'super', 'tuple', 'type', 'vars', 'zip', '__import__',
         ],
-
         operators: [
           '+', '-', '*', '**', '/', '//', '%', '@', '<<', '>>', '&', '|', '^',
           '~', '<', '>', '<=', '>=', '==', '!=', '=', '+=', '-=', '*=', '/=',
           '//=', '%=', '**=', '@=', '&=', '|=', '^=', '>>=', '<<=',
         ],
-
         symbols: /[=><!~?:&|+\-*^%]+/,
-
         escapes: /\\(?:[abfnrtv"']|x[0-9A-Fa-f]{1,4}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})/,
-
         tokenizer: {
           root: [
             [/[a-zA-Z_]\w*/, {
@@ -96,40 +116,34 @@ const PythonCodeEditor: React.FC<PythonCodeEditorProps> = ({
             [/f"/, 'string', '@fstring_double'],
             [/f'/, 'string', '@fstring_single'],
           ],
-
           whitespace: [
             [/[ \t\r\n]+/, ''],
             [/#.*$/, 'comment'],
             [/'''/, 'comment', '@docstring_single'],
             [/"""/, 'comment', '@docstring_double'],
           ],
-
           docstring_single: [
             [/[^']+/, 'comment'],
             [/'''/, 'comment', '@pop'],
             [/'/, 'comment'],
           ],
-
           docstring_double: [
             [/[^"]+/, 'comment'],
             [/"""/, 'comment', '@pop'],
             [/"/, 'comment'],
           ],
-
           string_double: [
             [/[^\\"]+/, 'string'],
             [/@escapes/, 'string.escape'],
             [/\\./, 'string.escape.invalid'],
             [/"/, 'string', '@pop'],
           ],
-
           string_single: [
             [/[^\\']+/, 'string'],
             [/@escapes/, 'string.escape'],
             [/\\./, 'string.escape.invalid'],
             [/'/, 'string', '@pop'],
           ],
-
           fstring_double: [
             [/[^\\{}"]+/, 'string'],
             [/{/, 'delimiter.bracket', '@fstring_expr'],
@@ -137,7 +151,6 @@ const PythonCodeEditor: React.FC<PythonCodeEditorProps> = ({
             [/\\./, 'string.escape.invalid'],
             [/"/, 'string', '@pop'],
           ],
-
           fstring_single: [
             [/[^\\{}']+/, 'string'],
             [/{/, 'delimiter.bracket', '@fstring_expr'],
@@ -145,7 +158,6 @@ const PythonCodeEditor: React.FC<PythonCodeEditorProps> = ({
             [/\\./, 'string.escape.invalid'],
             [/'/, 'string', '@pop'],
           ],
-
           fstring_expr: [
             [/\}/, 'delimiter.bracket', '@pop'],
             { include: '@root' },
@@ -153,10 +165,85 @@ const PythonCodeEditor: React.FC<PythonCodeEditorProps> = ({
         },
       });
 
-      monacoEditor.editor.setTheme('vs-dark');
+      monaco.editor.setTheme('vs-dark');
+
+      editor.onDidChangeCursorPosition((e) => {
+        setCursorPosition({
+          line: e.position.lineNumber,
+          column: e.position.column,
+        });
+      });
     },
     []
   );
+
+  useEffect(() => {
+    if (monacoRef.current && activities.length > 0) {
+      const dispose = registerCompletions(monacoRef.current);
+      return dispose;
+    }
+  }, [activities, registerCompletions]);
+
+  const handleFind = useCallback(() => {
+    editorRef.current?.getAction('actions.find')?.run();
+  }, []);
+
+  const handleReplace = useCallback(() => {
+    editorRef.current?.getAction('editor.action.startFindReplaceAction')?.run();
+  }, []);
+
+  const handleFormat = useCallback(() => {
+    editorRef.current?.getAction('editor.action.formatDocument')?.run();
+  }, []);
+
+  const handleInsertSnippet = useCallback((snippet: Snippet) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const position = editor.getPosition();
+    if (!position) return;
+
+    const range = {
+      startLineNumber: position.lineNumber,
+      startColumn: position.column,
+      endLineNumber: position.lineNumber,
+      endColumn: position.column,
+    };
+
+    editor.executeEdits('', [
+      {
+        range,
+        text: snippet.insertText,
+      },
+    ]);
+
+    editor.focus();
+  }, []);
+
+  const handleInsertVariable = useCallback((name: string) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const position = editor.getPosition();
+    if (!position) return;
+
+    const range = {
+      startLineNumber: position.lineNumber,
+      startColumn: position.column,
+      endLineNumber: position.lineNumber,
+      endColumn: position.column,
+    };
+
+    editor.executeEdits('', [
+      {
+        range,
+        text: name,
+      },
+    ]);
+
+    editor.focus();
+    setIsVariablesPanelOpen(false);
+  }, []);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -169,6 +256,11 @@ const PythonCodeEditor: React.FC<PythonCodeEditorProps> = ({
     },
     [onClose, handleSave]
   );
+
+  const handleCodeChange = useCallback((value: string | undefined) => {
+    setCode(value || '');
+    setIsDirty(value !== initialCode);
+  }, [initialCode]);
 
   if (!isOpen) return null;
 
@@ -215,12 +307,40 @@ const PythonCodeEditor: React.FC<PythonCodeEditorProps> = ({
           </div>
         </div>
 
+        <div className="relative flex flex-col border-b border-slate-200 dark:border-slate-700">
+          <CodeToolbar
+            onFind={handleFind}
+            onReplace={handleReplace}
+            onFormat={handleFormat}
+            onOpenSnippets={() => {
+              closeAllPanels();
+              setIsSnippetPanelOpen(true);
+            }}
+            onOpenVariables={() => {
+              closeAllPanels();
+              setIsVariablesPanelOpen(true);
+            }}
+            isSnippetPanelOpen={isSnippetPanelOpen}
+            isVariablesPanelOpen={isVariablesPanelOpen}
+            variableCount={variables.length}
+          />
+          <SnippetPanel
+            isOpen={isSnippetPanelOpen}
+            onClose={() => setIsSnippetPanelOpen(false)}
+            onInsertSnippet={handleInsertSnippet}
+          />
+          <VariablesPanel
+            isOpen={isVariablesPanelOpen}
+            onInsertVariable={handleInsertVariable}
+          />
+        </div>
+
         <div className="flex-1 min-h-0">
           <Editor
             height="100%"
             defaultLanguage="python"
             value={code}
-            onChange={(value) => setCode(value || '')}
+            onChange={handleCodeChange}
             theme="vs-dark"
             options={{
               minimap: { enabled: true },
@@ -235,15 +355,22 @@ const PythonCodeEditor: React.FC<PythonCodeEditorProps> = ({
               automaticLayout: true,
               formatOnPaste: true,
               formatOnType: true,
+              quickSuggestions: true,
+              suggestOnTriggerCharacters: true,
+              acceptSuggestionOnEnter: 'on',
+              tabCompletion: 'on',
             }}
-            onMount={handleEditorMount}
+            onMount={handleEditorDidMount}
           />
         </div>
 
-        <div className="px-4 py-2 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400 flex justify-between">
-          <span>Python code will be executed during the activity run</span>
-          <span>Ctrl+S to save, Esc to cancel</span>
-        </div>
+        <StatusBar
+          line={cursorPosition.line}
+          column={cursorPosition.column}
+          encoding="UTF-8"
+          language="Python"
+          isSaved={!isDirty}
+        />
       </div>
     </div>
   );

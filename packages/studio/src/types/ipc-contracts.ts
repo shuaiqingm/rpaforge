@@ -141,6 +141,7 @@ export interface FileInfo {
 import type { FsEvent } from './events';
 
 export interface FileSystemAPI {
+  setProjectRoot: (rootPath: string) => Promise<void>;
   pathExists: (path: string) => Promise<boolean>;
   readDir: (dirPath: string) => Promise<FileInfo[]>;
   readFile: (filePath: string) => Promise<string>;
@@ -208,6 +209,7 @@ export const IPC_CHANNELS = {
   DIALOG_SHOW_SAVE: 'dialog:showSave',
 
   // FileSystem channels
+  FS_SET_PROJECT_ROOT: 'fs:setProjectRoot',
   FS_PATH_EXISTS: 'fs:pathExists',
   FS_READ_DIR: 'fs:readDir',
   FS_READ_FILE: 'fs:readFile',

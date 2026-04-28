@@ -9,7 +9,7 @@ import type { BridgeState, BridgeStatus, FsEvent } from '../src/types/events';
 import type { OpenDialogOptions, SaveDialogOptions, FileInfo } from '../src/types/ipc-contracts';
 import { createLogger } from '../src/utils/logger';
 import { config } from '../src/config/app.config';
-import { validateMethodName, validateSafeString, validateFilePath, validateIPCPayload } from './ipc-validator';
+import { validateMethodName, validateSafeString, validateFilePath, validateIPCPayload, setProjectRoot, getProjectRoot } from './ipc-validator';
 
 let mainWindow: BrowserWindow | null = null;
 let pythonBridge: PythonBridge | null = null;
@@ -74,17 +74,21 @@ function createWindow() {
   const csp = isDev
     ? [
         "default-src 'self' http://localhost:* ws://localhost:*",
-        "script-src 'self' 'unsafe-eval'",
-        "style-src 'self' 'unsafe-inline'",
+        "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net",
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+        "style-src-elem 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+        "worker-src 'self' blob:",
         "img-src 'self' data:",
-        "font-src 'self'",
-        "connect-src 'self' http://localhost:* ws://localhost:*",
+        "font-src 'self' data:",
+        "connect-src 'self' http://localhost:* ws://localhost:* https://cdn.jsdelivr.net",
         "frame-ancestors 'none'",
       ].join('; ')
     : [
         "default-src 'self'",
         "script-src 'self'",
         "style-src 'self' 'unsafe-inline'",
+        "style-src-elem 'self' 'unsafe-inline'",
+        "worker-src 'self' blob:",
         "img-src 'self' data:",
         "font-src 'self'",
         "connect-src 'self' http://localhost:* ws://localhost:*",
@@ -103,7 +107,8 @@ function createWindow() {
   });
 
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5173');
+    const devServerUrl = process.env.VITE_DEV_SERVER_URL ?? 'http://127.0.0.1:5173';
+    mainWindow.loadURL(devServerUrl);
     mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
@@ -263,13 +268,18 @@ function setupIPCHandlers() {
     return { canceled: result.canceled, filePath: result.filePath };
   });
 
+  ipcMain.handle(IPC_CHANNELS.FS_SET_PROJECT_ROOT, async (_, rootPath: string) => {
+    setProjectRoot(rootPath);
+    logger.info(`Project root set to: ${rootPath}`);
+  });
+
   ipcMain.handle(IPC_CHANNELS.FS_PATH_EXISTS, async (_, filePath: string) => {
-    validateFilePath(filePath, 'filePath');
+    validateFilePath(filePath, 'filePath', getProjectRoot());
     return fs.existsSync(filePath);
   });
 
   ipcMain.handle(IPC_CHANNELS.FS_READ_DIR, async (event, dirPath: string): Promise<FileInfo[]> => {
-    validateFilePath(dirPath, 'dirPath');
+    validateFilePath(dirPath, 'dirPath', getProjectRoot());
     validateIPCPayload(event, 'fs:readDir', { dirPath });
     const entries = await fsp.readdir(dirPath, { withFileTypes: true });
     return entries.map((entry) => ({
@@ -282,13 +292,13 @@ function setupIPCHandlers() {
   });
 
   ipcMain.handle(IPC_CHANNELS.FS_READ_FILE, async (event, filePath: string): Promise<string> => {
-    validateFilePath(filePath, 'filePath');
+    validateFilePath(filePath, 'filePath', getProjectRoot());
     validateIPCPayload(event, 'fs:readFile', { filePath });
     return fsp.readFile(filePath, 'utf-8');
   });
 
   ipcMain.handle(IPC_CHANNELS.FS_WRITE_FILE, async (event, filePath: string, content: string) => {
-    validateFilePath(filePath, 'filePath');
+    validateFilePath(filePath, 'filePath', getProjectRoot());
     validateSafeString(content, 'content');
     validateIPCPayload(event, 'fs:writeFile', { filePath, content });
     validateSafeString(content, 'content');
@@ -296,45 +306,45 @@ function setupIPCHandlers() {
   });
 
   ipcMain.handle(IPC_CHANNELS.FS_CREATE_DIR, async (event, dirPath: string) => {
-    validateFilePath(dirPath, 'dirPath');
+    validateFilePath(dirPath, 'dirPath', getProjectRoot());
     validateIPCPayload(event, 'fs:createDir', { dirPath });
     await fsp.mkdir(dirPath, { recursive: true });
   });
 
   ipcMain.handle(IPC_CHANNELS.FS_DELETE, async (event, targetPath: string, recursive = false) => {
-    validateFilePath(targetPath, 'targetPath');
+    validateFilePath(targetPath, 'targetPath', getProjectRoot());
     validateIPCPayload(event, 'fs:delete', { targetPath, recursive });
     await fsp.rm(targetPath, { recursive, force: true });
   });
 
   ipcMain.handle(IPC_CHANNELS.FS_RENAME, async (event, oldPath: string, newPath: string) => {
-    validateFilePath(oldPath, 'oldPath');
-    validateFilePath(newPath, 'newPath');
+    validateFilePath(oldPath, 'oldPath', getProjectRoot());
+    validateFilePath(newPath, 'newPath', getProjectRoot());
     validateIPCPayload(event, 'fs:rename', { oldPath, newPath });
     await fsp.rename(oldPath, newPath);
   });
 
   ipcMain.handle(IPC_CHANNELS.FS_COPY, async (event, source: string, destination: string) => {
-    validateFilePath(source, 'source');
-    validateFilePath(destination, 'destination');
+    validateFilePath(source, 'source', getProjectRoot());
+    validateFilePath(destination, 'destination', getProjectRoot());
     validateIPCPayload(event, 'fs:copy', { source, destination });
     await fsp.cp(source, destination, { recursive: true });
   });
 
   ipcMain.handle(IPC_CHANNELS.FS_OPEN_WITH_SYSTEM, async (event, filePath: string) => {
-    validateFilePath(filePath, 'filePath');
+    validateFilePath(filePath, 'filePath', getProjectRoot());
     validateIPCPayload(event, 'fs:openWithSystem', { filePath });
     await shell.openPath(filePath);
   });
 
   ipcMain.handle(IPC_CHANNELS.FS_SHOW_IN_FOLDER, async (event, filePath: string) => {
-    validateFilePath(filePath, 'filePath');
+    validateFilePath(filePath, 'filePath', getProjectRoot());
     validateIPCPayload(event, 'fs:showInFolder', { filePath });
     shell.showItemInFolder(filePath);
   });
 
   ipcMain.handle(IPC_CHANNELS.FS_GET_FILE_INFO, async (event, filePath: string): Promise<FileInfo> => {
-    validateFilePath(filePath, 'filePath');
+    validateFilePath(filePath, 'filePath', getProjectRoot());
     validateIPCPayload(event, 'fs:getFileInfo', { filePath });
     const stats = await fsp.stat(filePath);
     const name = path.basename(filePath);
@@ -350,7 +360,7 @@ function setupIPCHandlers() {
   });
 
   ipcMain.handle(IPC_CHANNELS.FS_WATCH_DIR, async (event, dirPath: string) => {
-    validateFilePath(dirPath, 'dirPath');
+    validateFilePath(dirPath, 'dirPath', getProjectRoot());
     validateIPCPayload(event, 'fs:watchDir', { dirPath });
     if (fsWatchers.has(dirPath)) {
       return;
@@ -409,7 +419,7 @@ function setupIPCHandlers() {
   });
 
   ipcMain.handle(IPC_CHANNELS.FS_UNWATCH_DIR, async (event, dirPath: string) => {
-    validateFilePath(dirPath, 'dirPath');
+    validateFilePath(dirPath, 'dirPath', getProjectRoot());
     validateIPCPayload(event, 'fs:unwatchDir', { dirPath });
     const watcher = fsWatchers.get(dirPath);
     if (watcher) {

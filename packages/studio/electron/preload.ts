@@ -28,6 +28,7 @@ const IPC_CHANNELS = {
   DEBUGGER_GET_CALL_STACK: 'debugger:getCallStack',
   DIALOG_SHOW_OPEN: 'dialog:showOpen',
   DIALOG_SHOW_SAVE: 'dialog:showSave',
+  FS_SET_PROJECT_ROOT: 'fs:setProjectRoot',
   FS_PATH_EXISTS: 'fs:pathExists',
   FS_READ_DIR: 'fs:readDir',
   FS_READ_FILE: 'fs:readFile',
@@ -90,6 +91,7 @@ const api: StudioAPI = {
   },
 
   fs: {
+    setProjectRoot: (rootPath) => ipcRenderer.invoke(IPC_CHANNELS.FS_SET_PROJECT_ROOT, rootPath),
     pathExists: (path) => ipcRenderer.invoke(IPC_CHANNELS.FS_PATH_EXISTS, path),
     readDir: (dirPath) => ipcRenderer.invoke(IPC_CHANNELS.FS_READ_DIR, dirPath),
     readFile: (filePath) => ipcRenderer.invoke(IPC_CHANNELS.FS_READ_FILE, filePath),

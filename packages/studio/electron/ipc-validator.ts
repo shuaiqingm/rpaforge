@@ -3,7 +3,9 @@ import path from 'node:path';
 import Ajv from 'ajv';
 import { schemas } from '../src/types/ipc-schemas';
 
-const ajv = new Ajv({ allErrors: true, strict: false });
+const ajv = new Ajv({ allErrors: false, strict: false });
+
+let projectRoot: string | null = null;
 
 const compiledSchemas = new Map<string, any>();
 for (const [schemaId, schemaDef] of Object.entries(schemas)) {
@@ -45,7 +47,7 @@ export function validateSafeString(value: unknown, paramName: string): void {
   }
 }
 
-export function validateFilePath(value: unknown, paramName: string): void {
+export function validateFilePath(value: unknown, paramName: string, allowedRoot: string | null = null): void {
   if (typeof value !== 'string') {
     throw new Error(`Invalid IPC payload: ${paramName} must be a string`);
   }
@@ -56,15 +58,26 @@ export function validateFilePath(value: unknown, paramName: string): void {
 
   const resolved = path.resolve(value);
   const cwd = path.resolve(process.cwd());
+  const baseDir = allowedRoot ? path.resolve(allowedRoot) : cwd;
 
-  if (!resolved.startsWith(cwd + path.sep) && resolved !== cwd) {
-    throw new Error(`Invalid IPC payload: ${paramName} is outside the allowed project directory`);
+  if (!resolved.startsWith(baseDir + path.sep) && resolved !== baseDir) {
+    if (!resolved.startsWith(cwd + path.sep) && resolved !== cwd) {
+      throw new Error(`Invalid IPC payload: ${paramName} is outside the allowed project directory`);
+    }
   }
 
   const blockedSegments = ['.ssh', '.aws', '.gnupg', '.rpaforge', '.config' + path.sep + 'gh'];
   if (blockedSegments.some((seg) => resolved.includes(path.sep + seg + path.sep) || resolved.endsWith(path.sep + seg))) {
     throw new Error(`Invalid IPC payload: ${paramName} accesses a restricted path`);
   }
+}
+
+export function setProjectRoot(root: string | null): void {
+  projectRoot = root;
+}
+
+export function getProjectRoot(): string | null {
+  return projectRoot;
 }
 
 export function validateMethodName(value: unknown): void {
