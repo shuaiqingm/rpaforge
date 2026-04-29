@@ -1,5 +1,6 @@
 import type { Edge, Node } from '@reactflow/core';
 import { create } from 'zustand';
+import { immer } from 'zustand/middleware/immer';
 import {
   validateDiagram as validateDiagramDomain,
   countStartNodes,
@@ -167,7 +168,7 @@ export function createStartBlockNode(
   };
 }
 
-export const useBlockStore = create<BlockState>((set, get) => ({
+export const useBlockStore = create<BlockState>()(immer((set, get) => ({
   nodes: [],
   edges: [],
   clipboard: null,
@@ -203,43 +204,38 @@ export const useBlockStore = create<BlockState>((set, get) => ({
   },
 
   updateNode: (id, data) => {
-    set((state) => ({
-      nodes: state.nodes.map((node) => {
-        if (node.id !== id) {
-          return node;
-        }
+    set((state) => {
+      const idx = state.nodes.findIndex((n) => n.id === id);
+      if (idx === -1) return;
 
-        const nextBlockData =
-          data.blockData || data.activity
-            ? normalizeNode({
-                ...node,
-                data: {
-                  ...node.data,
-                  ...data,
-                  blockData: data.blockData
-                    ? ({ ...node.data.blockData, ...data.blockData } as BlockData)
-                    : node.data.blockData,
-                },
-              }).data.blockData
-            : node.data.blockData;
+      const node = state.nodes[idx];
 
-        return {
-          ...node,
-          data: {
-            ...node.data,
-            ...data,
-            blockData: nextBlockData,
-            activityValues: data.activityValues
-              ? { ...node.data.activityValues, ...data.activityValues }
-              : node.data.activityValues,
-            builtinSettings: data.builtinSettings
-              ? { ...node.data.builtinSettings, ...data.builtinSettings }
-              : node.data.builtinSettings,
-            tags: data.tags ?? node.data.tags,
-          },
-        };
-      }),
-    }));
+      const nextBlockData =
+        data.blockData || data.activity
+          ? normalizeNode({
+              ...node,
+              data: {
+                ...node.data,
+                ...data,
+                blockData: data.blockData
+                  ? ({ ...node.data.blockData, ...data.blockData } as BlockData)
+                  : node.data.blockData,
+              },
+            }).data.blockData
+          : node.data.blockData;
+
+      Object.assign(node.data, data);
+      node.data.blockData = nextBlockData;
+      if (data.activityValues) {
+        node.data.activityValues = { ...node.data.activityValues, ...data.activityValues };
+      }
+      if (data.builtinSettings) {
+        node.data.builtinSettings = { ...node.data.builtinSettings, ...data.builtinSettings };
+      }
+      if (data.tags !== undefined) {
+        node.data.tags = data.tags;
+      }
+    });
   },
 
   updateNodePosition: (id, position) => {
@@ -376,6 +372,6 @@ export const useBlockStore = create<BlockState>((set, get) => ({
       clipboard: null,
     });
   },
-}));
+})));
 
 export type { DiagramValidationError };
