@@ -42,8 +42,7 @@ const ActivityParamEditor: React.FC<ActivityParamEditorProps> = ({
 }) => {
   const isSelectorParam =
     param.name.toLowerCase().includes('selector') ||
-    param.name.toLowerCase().includes('locator') ||
-    param.type === 'selector';
+    param.name.toLowerCase().includes('locator');
 
   const commonLabel = (
     <label className="mb-1 flex items-center text-sm font-medium text-slate-600 dark:text-slate-300">
