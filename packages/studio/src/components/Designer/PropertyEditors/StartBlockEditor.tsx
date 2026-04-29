@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { FiPlus, FiX } from 'react-icons/fi';
+import { InputDialog } from '../../Common/InputDialog';
 import type { BlockData } from '../../../types/blocks';
 
 type StartBlock = Extract<BlockData, { type: 'start' }>;
@@ -13,12 +15,17 @@ export function StartBlockEditor({
   onUpdateBlockData,
 }: StartBlockEditorProps) {
   const tags = blockData.tags || [];
+  const [showTagDialog, setShowTagDialog] = useState(false);
 
   const handleAddTag = () => {
-    const newTag = prompt('Enter tag name:');
-    if (newTag && newTag.trim() && !tags.includes(newTag.trim())) {
-      onUpdateBlockData({ tags: [...tags, newTag.trim()] });
+    setShowTagDialog(true);
+  };
+
+  const handleTagConfirm = (newTag: string) => {
+    if (!tags.includes(newTag)) {
+      onUpdateBlockData({ tags: [...tags, newTag] });
     }
+    setShowTagDialog(false);
   };
 
   const handleRemoveTag = (index: number) => {
@@ -77,6 +84,15 @@ export function StartBlockEditor({
           </div>
         )}
       </div>
+
+      <InputDialog
+        isOpen={showTagDialog}
+        title="Add Tag"
+        label="Tag name"
+        placeholder="Enter tag name"
+        onConfirm={handleTagConfirm}
+        onCancel={() => setShowTagDialog(false)}
+      />
     </div>
   );
 }
