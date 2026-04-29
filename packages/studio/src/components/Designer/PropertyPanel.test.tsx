@@ -158,13 +158,13 @@ describe('PropertyPanel block editors', () => {
       type: 'string',
       scope: 'task',
       value: '',
-    });
+    }, '', undefined);
     useVariableStore.getState().addVariable({
       name: 'login_success',
       type: 'boolean',
       scope: 'task',
       value: '',
-    });
+    }, '', undefined);
 
     const blockData = {
       ...createDefaultBlockData('sub-diagram-call', 'sub-call-1'),

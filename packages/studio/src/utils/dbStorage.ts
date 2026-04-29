@@ -14,9 +14,9 @@ export const indexedDBStorage = {
     }
 
     try {
-      const result = await idb.variables.get(STORAGE_KEY);
-      if (result) {
-        return JSON.stringify(result.variables);
+      const variables = await idb.variables.getByProject(STORAGE_KEY);
+      if (variables && variables.length > 0) {
+        return JSON.stringify(variables);
       }
     } catch (e) {
       console.warn('Failed to get from IndexedDB, falling back to localStorage', e);
@@ -34,7 +34,7 @@ export const indexedDBStorage = {
     try {
       const variables = JSON.parse(value) as ProcessVariable[];
       for (const v of variables) {
-        await idb.variables.save(v);
+        await idb.variables.save({ ...v, projectId: STORAGE_KEY });
       }
     } catch (e) {
       console.warn('Failed to save to IndexedDB, using localStorage', e);

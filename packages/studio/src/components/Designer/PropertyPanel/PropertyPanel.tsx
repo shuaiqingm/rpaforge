@@ -46,7 +46,7 @@ const PropertyPanel: React.FC = () => {
 
   const handlers = useBlockDataHandlers({ selectedNodeId, selectedNode, updateNode });
 
-  const handleCreateVariable = (variable: VariableDefinition) => addVariable(variable);
+  const handleCreateVariable = (variable: VariableDefinition) => addVariable(variable, '', undefined);
 
   const handleDeleteNode = () => {
     if (!selectedNodeId) return;

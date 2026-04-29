@@ -118,7 +118,7 @@ const PythonCodeEditor: React.FC<PythonCodeEditorProps> = ({
     ];
 
     return () => {
-      disposables.forEach((d) => d?.());
+      disposables.forEach((d) => d?.dispose());
     };
   }, [handleFormat]);
 

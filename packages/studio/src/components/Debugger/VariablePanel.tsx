@@ -177,7 +177,7 @@ const VariablePanel: React.FC = () => {
   };
 
   const handleCreateVariable = (definition: VariableDefinition) => {
-    addVariable(definition);
+    addVariable(definition, '', undefined);
   };
 
   const getScopeBadge = (scope: string) => {
