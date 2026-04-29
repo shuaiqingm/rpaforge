@@ -4,8 +4,15 @@ import { FiCode, FiMoreHorizontal } from 'react-icons/fi';
 import VariablePicker from '../../VariablePicker';
 import ExpressionEditor from '../../ExpressionEditor';
 import FilePicker from '../../FilePicker';
+import { FieldHelp } from './FieldHelp';
 import type { ActivityParam } from '../../../../types/engine';
 import { stringifyValue, isPathParam, getFileFilters, multilineParamTypes } from '../utils/paramUtils';
+
+const SELECTOR_EXAMPLES = [
+  { value: 'button:id=submit', label: 'Click button with id' },
+  { value: 'input:class=username', label: 'Input with class' },
+  { value: 'div:text=Submit', label: 'Div with text content' },
+];
 
 export interface VariableOption {
   name: string;
@@ -33,10 +40,23 @@ const ActivityParamEditor: React.FC<ActivityParamEditorProps> = ({
   onOpenCodeEditor,
   activityLibrary,
 }) => {
+  const isSelectorParam =
+    param.name.toLowerCase().includes('selector') ||
+    param.name.toLowerCase().includes('locator') ||
+    param.type === 'selector';
+
   const commonLabel = (
-    <label className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">
+    <label className="mb-1 flex items-center text-sm font-medium text-slate-600 dark:text-slate-300">
       {param.label}
       {param.required && <span className="ml-1 text-red-500">*</span>}
+      {isSelectorParam && (
+        <FieldHelp
+          title={param.label}
+          description="Selector to locate the UI element"
+          format="type:attribute=value"
+          examples={SELECTOR_EXAMPLES}
+        />
+      )}
     </label>
   );
 
