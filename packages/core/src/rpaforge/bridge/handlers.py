@@ -485,6 +485,32 @@ class BridgeHandlers:
         return {"status": "not_paused"}
 
     def _handle_set_breakpoint(self, params: dict) -> dict[str, Any]:
+        """Add a breakpoint at a node or line, queuing it if no runner is active.
+
+        Request:
+            {
+                "nodeId": str,       # diagram node identifier
+                "line": int,         # source line number (0 = unspecified)
+                "condition": str,    # optional Python expression
+                "hitCondition": str, # optional hit-count expression
+            }
+
+        Response:
+            {
+                "breakpointId": str,  # assigned ID ("pending-N" if queued)
+                "nodeId": str,
+                "line": int,
+                "enabled": bool,
+                "pending": bool,      # True only when queued before process start
+            }
+
+        Errors:
+            - None raised; queues the breakpoint if the runner is not yet started.
+
+        Example::
+            request = {"nodeId": "node-1", "line": 10}
+            response = {"breakpointId": "bp-1", "nodeId": "node-1", "line": 10, "enabled": True}
+        """
         node_id = params.get("nodeId", "")
         line = params.get("line", 0)
         condition = params.get("condition")
@@ -522,6 +548,25 @@ class BridgeHandlers:
         }
 
     def _handle_remove_breakpoint(self, params: dict) -> dict[str, Any]:
+        """Remove a breakpoint by its ID.
+
+        Request:
+            {
+                "breakpointId": str,  # ID returned by setBreakpoint
+            }
+
+        Response:
+            {
+                "removed": bool,  # True if found and removed, False otherwise
+            }
+
+        Errors:
+            - None raised; returns removed=False when no runner is active.
+
+        Example::
+            request = {"breakpointId": "bp-1"}
+            response = {"removed": True}
+        """
         bp_id = params.get("breakpointId", "")
         if self._runner:
             removed = self._runner.remove_breakpoint(bp_id)
@@ -529,6 +574,25 @@ class BridgeHandlers:
         return {"removed": False}
 
     def _handle_toggle_breakpoint(self, params: dict) -> dict[str, Any]:
+        """Toggle the enabled/disabled state of a breakpoint.
+
+        Request:
+            {
+                "breakpointId": str,  # ID returned by setBreakpoint
+            }
+
+        Response:
+            {
+                "enabled": bool | None,  # new state, or None if no runner is active
+            }
+
+        Errors:
+            - None raised; returns enabled=None when no runner is active.
+
+        Example::
+            request = {"breakpointId": "bp-1"}
+            response = {"enabled": False}
+        """
         bp_id = params.get("breakpointId", "")
         if self._runner:
             enabled = self._runner.toggle_breakpoint(bp_id)
@@ -536,6 +600,32 @@ class BridgeHandlers:
         return {"enabled": None}
 
     def _handle_get_breakpoints(self, _params: dict) -> dict[str, Any]:
+        """Return all currently registered breakpoints.
+
+        Request:
+            {}
+
+        Response:
+            {
+                "breakpoints": list[  # empty list when no runner is active
+                    {
+                        "id": str,
+                        "nodeId": str,
+                        "line": int,
+                        "enabled": bool,
+                        "condition": str | None,
+                        "hitCount": int,
+                    }
+                ],
+            }
+
+        Errors:
+            - None raised.
+
+        Example::
+            request = {}
+            response = {"breakpoints": [{"id": "bp-1", "nodeId": "node-1", "line": 10, "enabled": True, "condition": None, "hitCount": 0}]}
+        """
         if not self._runner:
             return {"breakpoints": []}
 
@@ -554,30 +644,121 @@ class BridgeHandlers:
         return {"breakpoints": breakpoints}
 
     def _handle_step_over(self, _params: dict) -> dict[str, Any]:
+        """Advance execution by one activity, skipping into sub-diagrams.
+
+        Request:
+            {}
+
+        Response:
+            {
+                "status": str,  # "stepping" or "not_paused"
+            }
+
+        Errors:
+            - None raised; returns not_paused when runner is not in paused state.
+
+        Example::
+            request = {}
+            response = {"status": "stepping"}
+        """
         if self._runner and self._runner.is_paused:
             self._runner.step_over()
             return {"status": "stepping"}
         return {"status": "not_paused"}
 
     def _handle_step_into(self, _params: dict) -> dict[str, Any]:
+        """Advance execution into a sub-diagram or the next activity.
+
+        Request:
+            {}
+
+        Response:
+            {
+                "status": str,  # "stepping" or "not_paused"
+            }
+
+        Errors:
+            - None raised; returns not_paused when runner is not in paused state.
+
+        Example::
+            request = {}
+            response = {"status": "stepping"}
+        """
         if self._runner and self._runner.is_paused:
             self._runner.step_into()
             return {"status": "stepping"}
         return {"status": "not_paused"}
 
     def _handle_step_out(self, _params: dict) -> dict[str, Any]:
+        """Finish the current sub-diagram and pause at the caller.
+
+        Request:
+            {}
+
+        Response:
+            {
+                "status": str,  # "stepping" or "not_paused"
+            }
+
+        Errors:
+            - None raised; returns not_paused when runner is not in paused state.
+
+        Example::
+            request = {}
+            response = {"status": "stepping"}
+        """
         if self._runner and self._runner.is_paused:
             self._runner.step_out()
             return {"status": "stepping"}
         return {"status": "not_paused"}
 
     def _handle_continue(self, _params: dict) -> dict[str, Any]:
+        """Resume a paused process and run until the next breakpoint or completion.
+
+        Request:
+            {}
+
+        Response:
+            {
+                "status": str,  # "running" or "not_paused"
+            }
+
+        Errors:
+            - None raised; returns not_paused when runner is not in paused state.
+
+        Example::
+            request = {}
+            response = {"status": "running"}
+        """
         if self._runner and self._runner.is_paused:
             self._runner.resume()
             return {"status": "running"}
         return {"status": "not_paused"}
 
     def _handle_get_variables(self, _params: dict) -> dict[str, Any]:
+        """Return all current process variables with their values and types.
+
+        Request:
+            {}
+
+        Response:
+            {
+                "variables": list[
+                    {
+                        "name": str,
+                        "value": Any,
+                        "type": str,  # Python type name
+                    }
+                ],  # empty list when no runner is active
+            }
+
+        Errors:
+            - None raised.
+
+        Example::
+            request = {}
+            response = {"variables": [{"name": "url", "value": "https://example.com", "type": "str"}]}
+        """
         if self._runner:
             raw_vars = self._runner.get_variables()
             variables = [
@@ -592,6 +773,30 @@ class BridgeHandlers:
         return {"variables": []}
 
     def _handle_get_call_stack(self, _params: dict) -> dict[str, Any]:
+        """Return the current call stack of running activities.
+
+        Request:
+            {}
+
+        Response:
+            {
+                "callStack": list[
+                    {
+                        "activity": str,
+                        "library": str,
+                        "line": int,
+                        "nodeId": str,
+                    }
+                ],  # empty list when no runner is active
+            }
+
+        Errors:
+            - None raised.
+
+        Example::
+            request = {}
+            response = {"callStack": [{"activity": "Click", "library": "WebUI", "line": 5, "nodeId": "node-2"}]}
+        """
         if not self._runner:
             return {"callStack": []}
 
@@ -608,6 +813,39 @@ class BridgeHandlers:
         return {"callStack": stack}
 
     def _handle_get_activities(self, _params: dict) -> dict[str, Any]:
+        """Return metadata for all registered activities across all libraries.
+
+        Request:
+            {}
+
+        Response:
+            {
+                "activities": list[
+                    {
+                        "id": str,           # "Library.activity_id"
+                        "name": str,
+                        "library": str,
+                        "category": str,
+                        "description": str,
+                        "tags": list[str],
+                        "type": str,         # "sync" | "async"
+                        "timeout_ms": int,
+                        "has_retry": bool,
+                        "has_continue_on_error": bool,
+                        "params": list,
+                        "has_output": bool,
+                        "output_description": str,
+                    }
+                ],
+            }
+
+        Errors:
+            - None raised.
+
+        Example::
+            request = {}
+            response = {"activities": [{"id": "WebUI.Click", "name": "Click", "library": "WebUI", ...}]}
+        """
         activities = [
             {
                 "id": f"{act.library}.{act.id}" if act.library else act.id,
@@ -632,6 +870,26 @@ class BridgeHandlers:
         return {"activities": activities}
 
     def _handle_format_code(self, params: dict) -> dict[str, Any]:
+        """Format Python source code using ruff.
+
+        Request:
+            {
+                "code": str,  # Python source to format
+            }
+
+        Response:
+            {
+                "formatted_code": str,
+                "changed": bool,  # True if formatting modified the source
+            }
+
+        Errors:
+            - JSONRPCError(INTERNAL_ERROR): ruff timed out (>10 s) or is not installed.
+
+        Example::
+            request = {"code": "x=1"}
+            response = {"formatted_code": "x = 1\\n", "changed": True}
+        """
         import logging
         import subprocess
         import tempfile
@@ -692,6 +950,36 @@ class BridgeHandlers:
             ) from None
 
     def _handle_validate_code(self, params: dict) -> dict[str, Any]:
+        """Lint Python source code using ruff and return errors and warnings.
+
+        Request:
+            {
+                "code": str,  # Python source to validate
+            }
+
+        Response:
+            {
+                "errors": list[
+                    {
+                        "line": int,
+                        "column": int,
+                        "endLine": int,
+                        "endColumn": int,
+                        "message": str,
+                        "code": str,    # ruff rule code e.g. "E501"
+                        "severity": str,
+                    }
+                ],
+                "warnings": list,  # same shape as errors, severity != "error"
+            }
+
+        Errors:
+            - JSONRPCError(INTERNAL_ERROR): ruff timed out (>10 s) or is not installed.
+
+        Example::
+            request = {"code": "import os\\nimport sys\\n"}
+            response = {"errors": [], "warnings": [{"line": 1, "column": 1, "message": "...", "code": "F401", "severity": "warning"}]}
+        """
         import logging
         import subprocess
         import tempfile
@@ -775,6 +1063,29 @@ class BridgeHandlers:
             ) from None
 
     def _handle_generate_code(self, params: dict) -> dict[str, Any]:
+        """Generate Python source code from a visual diagram.
+
+        Request:
+            {
+                "diagram": dict,       # main diagram with nodes/edges/metadata
+                "subDiagrams": dict,   # optional map of sub-diagram ID → diagram
+            }
+
+        Response:
+            {
+                "code": str,           # generated Python source for the main diagram
+                "sourcemap": dict,     # maps source lines to node IDs
+                "language": str,       # always "python"
+                "files": dict,         # only present when subDiagrams supplied; filename → source
+            }
+
+        Errors:
+            - None raised directly; exceptions from DiagramConverter propagate as-is.
+
+        Example::
+            request = {"diagram": {"nodes": [...], "edges": [...]}}
+            response = {"code": "from rpaforge...", "sourcemap": {}, "language": "python"}
+        """
         from rpaforge.codegen.python_generator import PythonCodeGenerator
 
         diagram = params.get("diagram", {})
@@ -802,6 +1113,26 @@ class BridgeHandlers:
         }
 
     async def _handle_shutdown(self, params: dict) -> dict[str, Any]:
+        """Initiate a graceful bridge shutdown, cancelling any running process.
+
+        Request:
+            {
+                "reason": str,  # optional; default "user_request"
+            }
+
+        Response:
+            {
+                "status": str,   # always "shutting_down"
+                "reason": str,
+            }
+
+        Errors:
+            - None raised.
+
+        Example::
+            request = {"reason": "user_request"}
+            response = {"status": "shutting_down", "reason": "user_request"}
+        """
         reason = params.get("reason", "user_request")
 
         if self._process_task and not self._process_task.done():
