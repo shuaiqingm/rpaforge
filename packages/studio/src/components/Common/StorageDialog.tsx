@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FiDatabase, FiTrash2, FiRefreshCw, FiAlertTriangle, FiCheck } from 'react-icons/fi';
-import { useStorageStats, formatStorageSummary } from '../hooks/useStorageStats';
-import { formatBytes } from '../utils/storage';
+import { useStorageStats } from '../../hooks/useStorageStats';
+import { formatBytes } from '../../utils/storage';
 
 interface StorageDialogProps {
   isOpen: boolean;

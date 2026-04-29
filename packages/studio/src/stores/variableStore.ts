@@ -161,7 +161,8 @@ export const useVariableStore = create<VariableState>()(
 );
 
 if (typeof window !== 'undefined') {
-  requestIdleCallback(() => {
+  const idleCallback = window.requestIdleCallback || window.setTimeout;
+  idleCallback(() => {
     useVariableStore.getState().cleanStaleProjects(DEFAULT_MAX_AGE_DAYS);
   });
 }
