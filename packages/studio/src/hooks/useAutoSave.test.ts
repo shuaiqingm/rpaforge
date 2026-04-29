@@ -129,7 +129,7 @@ describe('useAutoSave', () => {
     expect(mockFileStore.setLastSaved).not.toHaveBeenCalled();
   });
 
-  test('saves when dirty and interval elapses', () => {
+  test('saves when dirty and interval elapses', async () => {
     (mockMetadataStore as { metadata: MockMetadata | null }).metadata = {
       id: 'test-id',
       name: 'Test',
@@ -144,8 +144,9 @@ describe('useAutoSave', () => {
 
     renderHook(() => useAutoSave({ enabled: true, intervalMs: 1000 }));
 
-    act(() => {
+    await act(async () => {
       vi.advanceTimersByTime(1500);
+      await Promise.resolve();
     });
 
     expect(mockFileStore.setLastSaved).toHaveBeenCalled();
@@ -173,7 +174,7 @@ describe('useAutoSave', () => {
     expect(mockFileStore.setLastSaved).not.toHaveBeenCalled();
   });
 
-  test('forceSave triggers immediate save', () => {
+  test('forceSave triggers immediate save', async () => {
     (mockMetadataStore as { metadata: MockMetadata | null }).metadata = {
       id: 'test-id',
       name: 'Test',
@@ -189,8 +190,9 @@ describe('useAutoSave', () => {
       useAutoSave({ enabled: true, intervalMs: 10000 })
     );
 
-    act(() => {
+    await act(async () => {
       result.current.forceSave();
+      await Promise.resolve();
     });
 
     expect(mockFileStore.setLastSaved).toHaveBeenCalled();
