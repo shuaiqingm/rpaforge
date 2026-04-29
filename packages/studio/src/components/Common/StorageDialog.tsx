@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { FiDatabase, FiTrash2, FiRefreshCw, FiAlertTriangle, FiCheck } from 'react-icons/fi';
 import { useStorageStats } from '../../hooks/useStorageStats';
 import { formatBytes } from '../../utils/storage';
@@ -9,7 +8,7 @@ interface StorageDialogProps {
 }
 
 const StorageDialog: React.FC<StorageDialogProps> = ({ isOpen, onClose }) => {
-  const { storageInfo, isLoading, refresh, clearLocalStorage, clearAllData, isWarning, isExceeded } = useStorageStats();
+  const { storageInfo, isLoading, clearLocalStorage, clearAllData, isWarning, isExceeded } = useStorageStats();
 
   if (!isOpen) return null;
 

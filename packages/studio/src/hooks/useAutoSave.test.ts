@@ -89,7 +89,7 @@ describe('useAutoSave', () => {
       (selector: (state: typeof mockFileStore) => unknown) => selector(mockFileStore)
     );
 
-    vi.mocked(idb.autosave.get).mockResolvedValue(null);
+    vi.mocked(idb.autosave.get).mockResolvedValue(undefined);
     vi.mocked(idb.autosave.save).mockResolvedValue(undefined);
     vi.mocked(idb.autosave.clear).mockResolvedValue(undefined);
   });
@@ -212,7 +212,6 @@ describe('useAutoSave', () => {
 
   test('hasBackup returns true when backup exists', async () => {
     vi.mocked(idb.autosave.get).mockResolvedValue({
-      id: 'current-diagram',
       content: JSON.stringify({ metadata: { id: 'test', name: 'Test' }, nodes: [], edges: [] }),
       hash: 'abc123',
       timestamp: Date.now(),
@@ -242,7 +241,6 @@ describe('useAutoSave', () => {
       edges: [],
     };
     vi.mocked(idb.autosave.get).mockResolvedValue({
-      id: 'current-diagram',
       content: JSON.stringify(backupData),
       hash: 'abc123',
       timestamp: Date.now(),

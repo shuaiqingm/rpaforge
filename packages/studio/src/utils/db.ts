@@ -9,41 +9,6 @@ const STORES = {
   DIAGRAMS: 'diagrams',
 } as const;
 
-interface DBSchema {
-  autosave: {
-    key: string;
-    value: {
-      id: string;
-      content: string;
-      hash: string;
-      timestamp: number;
-    };
-    indexes: {
-      'by-timestamp': number;
-    };
-  };
-  variables: {
-    key: string;
-    value: ProcessVariable;
-    indexes: {
-      'by-project': string;
-      'by-diagram': string;
-    };
-  };
-  diagrams: {
-    key: string;
-    value: {
-      id: string;
-      projectId: string;
-      data: string;
-      timestamp: number;
-    };
-    indexes: {
-      'by-project': string;
-    };
-  };
-}
-
 let dbInstance: IDBDatabase | null = null;
 
 function openDatabase(): Promise<IDBDatabase> {

@@ -4,8 +4,8 @@ if (typeof window !== 'undefined') {
     sessionStorage.clear();
   };
   if (!window.requestIdleCallback) {
-    window.requestIdleCallback = (cb) => setTimeout(() => cb({ didTimeout: false, timeRemaining: () => 50 }), 0);
-    window.cancelIdleCallback = (id) => clearTimeout(id);
+    window.requestIdleCallback = ((cb: () => void) => setTimeout(cb, 0)) as typeof window.requestIdleCallback;
+    window.cancelIdleCallback = ((id: ReturnType<typeof setTimeout>) => clearTimeout(id)) as typeof window.cancelIdleCallback;
   }
   if (typeof window.indexedDB === 'undefined') {
     const mockDB: Record<string, unknown> = {};
