@@ -16,19 +16,19 @@ RPAForge is an Open Source RPA Studio. It provides a visual process designer, re
 
 ```bash
 # 1. Install development dependencies
-pip install -r requirements-dev.txt
+uv pip install -r requirements-dev.txt
 pre-commit install
 
 # 2. Install Python packages in development mode
-pip install -e packages/core
-pip install -e packages/libraries
+uv pip install -e packages/core
+uv pip install -e packages/libraries
 
 # 3. Install Studio UI dependencies
-cd packages/studio && npm ci --include=optional && cd ../..
+cd packages/studio && pnpm install && cd ../..
 
 # 4. Verify installation
 pytest packages/core/tests -v          # Python tests (4 test files)
-cd packages/studio && npm test -- --run && cd ../..  # UI tests (8 test files)
+cd packages/studio && pnpm test -- --run && cd ../..  # UI tests (8 test files)
 
 ## Architecture Improvements
 
@@ -208,6 +208,6 @@ class TestClassName:
 - **Never commit changes unless explicitly requested by the user**
 - Run `ruff format packages/` before submitting changes
 - Run `pytest packages/` to verify Python changes
-- Run `npm test` in packages/studio to verify UI changes
+- Run `pnpm test` in packages/studio to verify UI changes
 - Maintain backward compatibility
 - Python 3.10+ required (supports 3.10, 3.11, 3.12, 3.13)

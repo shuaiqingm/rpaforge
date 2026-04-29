@@ -151,9 +151,10 @@ robot_results/
 .kilo/plans/
 .claude/
 
-# Lock files (optional - uncomment if you want to ignore)
-# uv.lock
-# package-lock.json
+# Lock files
+uv.lock
+package-lock.json
+pnpm-lock.yaml
 
 # Test files in wrong locations
 **/test_bridge.py
