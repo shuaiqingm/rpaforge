@@ -266,6 +266,12 @@ export const IPC_CHANNELS = {
   FS_WATCH_DIR: 'fs:watchDir',
   FS_UNWATCH_DIR: 'fs:unwatchDir',
   FS_EVENT: 'fs:event',
+
+  // Log channels
+  LOG_WRITE: 'log:write',
+  LOG_GET: 'log:get',
+  LOG_EXPORT: 'log:export',
+  LOG_CLEAR: 'log:clear',
 } as const;
 
 // Type for IPC channel names
