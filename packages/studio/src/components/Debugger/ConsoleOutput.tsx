@@ -1,12 +1,69 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useMemo, useState } from 'react';
 import {
   FiFilter,
   FiSearch,
   FiTrash2,
   FiDownload,
+  FiChevronDown,
+  FiChevronRight,
+  FiAlertCircle,
 } from 'react-icons/fi';
 import { useConsoleStore, type LogEntry } from '../../stores/consoleStore';
 import type { LogLevel } from '../../types/events';
+
+interface ErrorSuggestion {
+  causes: string[];
+  fix: string;
+}
+
+const errorSuggestions: Record<string, ErrorSuggestion> = {
+  'Element not found': {
+    causes: [
+      'Element not loaded yet (add Wait before)',
+      'Wrong selector (check element ID)',
+      'Element in different frame/tab',
+    ],
+    fix: 'Add "Wait For Element" before this activity to ensure page is loaded.',
+  },
+  'Timeout': {
+    causes: [
+      'Page load too slow',
+      'Network latency',
+      'Element never appeared',
+    ],
+    fix: 'Increase timeout value or add explicit wait conditions.',
+  },
+  'Connection refused': {
+    causes: [
+      'Application not running',
+      'Wrong port or address',
+    ],
+    fix: 'Check that the target application is running and accessible.',
+  },
+  'Permission denied': {
+    causes: [
+      'Insufficient privileges',
+      'File locked by another process',
+    ],
+    fix: 'Run the process with appropriate permissions or close conflicting applications.',
+  },
+  'File not found': {
+    causes: [
+      'Path does not exist',
+      'Relative path resolved incorrectly',
+    ],
+    fix: 'Use absolute paths and verify the file exists before running.',
+  },
+};
+
+function matchSuggestion(message: string): ErrorSuggestion | null {
+  for (const [key, suggestion] of Object.entries(errorSuggestions)) {
+    if (message.toLowerCase().includes(key.toLowerCase())) {
+      return suggestion;
+    }
+  }
+  return null;
+}
 
 const LogLevelBadge: React.FC<{ level: LogLevel }> = ({ level }) => {
   const colors: Record<LogLevel, string> = {
@@ -24,8 +81,52 @@ const LogLevelBadge: React.FC<{ level: LogLevel }> = ({ level }) => {
   );
 };
 
+const ErrorCard: React.FC<{ entry: LogEntry }> = ({ entry }) => {
+  const [expanded, setExpanded] = useState(false);
+  const suggestion = matchSuggestion(entry.message);
+  const details = entry.details as Record<string, string> | undefined;
+
+  return (
+    <div className="mx-2 my-1 rounded border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 text-sm">
+      <button
+        className="w-full flex items-start gap-2 px-2 py-1.5 text-left"
+        onClick={() => setExpanded((v) => !v)}
+      >
+        <FiAlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+        <span className="flex-1 break-all text-red-700 dark:text-red-300 font-mono">{entry.message}</span>
+        {suggestion && (
+          expanded ? <FiChevronDown className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" /> : <FiChevronRight className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+        )}
+      </button>
+      {details?.activityName && (
+        <div className="px-8 pb-1 text-xs text-red-600 dark:text-red-400">
+          Activity: {details.activityName}
+          {details.library && <span className="ml-2">Library: {details.library}</span>}
+        </div>
+      )}
+      {expanded && suggestion && (
+        <div className="px-8 pb-2 space-y-1">
+          <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">Possible causes:</div>
+          <ul className="text-xs text-slate-600 dark:text-slate-400 list-disc list-inside space-y-0.5">
+            {suggestion.causes.map((cause) => (
+              <li key={cause}>{cause}</li>
+            ))}
+          </ul>
+          <div className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
+            Suggested fix: {suggestion.fix}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const LogLine: React.FC<{ entry: LogEntry; index: number }> = ({ entry, index }) => {
   const timeStr = entry.timestamp.toLocaleTimeString();
+
+  if (entry.level === 'error') {
+    return <ErrorCard entry={entry} />;
+  }
 
   return (
     <div className="log-entry flex items-start gap-2 px-2 py-1 hover:bg-slate-50 dark:hover:bg-slate-800 font-mono text-sm">

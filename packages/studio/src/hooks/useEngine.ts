@@ -154,12 +154,17 @@ export const useEngine = (): UseEngineResult => {
 
     unsubscribers.push(
       bridgeRef.current.onEvent('error', (event) => {
-        const errEvent = event as { message?: string; error?: string };
+        const errEvent = event as { message?: string; error?: string; activityName?: string; library?: string; selector?: string };
         const message = errEvent.message || errEvent.error || 'Unknown error';
         setError(message);
         addConsoleLog({
           level: 'error',
           message: `Engine error: ${message}`,
+          details: {
+            activityName: errEvent.activityName,
+            library: errEvent.library,
+            selector: errEvent.selector,
+          },
         });
       })
     );
