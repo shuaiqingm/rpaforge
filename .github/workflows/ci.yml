@@ -54,18 +54,10 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: |
-          uv venv
-          source .venv/bin/activate
-          uv pip install -r requirements-dev.txt
-          uv pip install -e packages/core
-          uv pip install -e packages/libraries
+        run: uv sync
 
       - name: Run tests
-        run: |
-          source .venv/bin/activate
-          pytest packages/core/tests -v --tb=short --cov=src --cov-report=xml
-          cd packages/libraries && pytest tests -v --tb=short
+        run: uv run pytest packages/core/tests -v --tb=short --cov=src --cov-report=xml && cd packages/libraries && uv run pytest tests -v --tb=short
 
       - name: Upload coverage
         uses: codecov/codecov-action@v6
@@ -89,10 +81,12 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Install dependencies
         working-directory: packages/studio
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
 
       - name: Run tests
         working-directory: packages/studio
@@ -113,26 +107,17 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
+          enable-cache: true
           allow-python-downloads: true
 
       - name: Set up Python
         run: uv python install 3.11
 
       - name: Install build tools
-        run: |
-          uv venv
-          source .venv/bin/activate
-          uv pip install build
+        run: uv sync
 
-      - name: Build core package
-        run: |
-          source .venv/bin/activate
-          python -m build packages/core
-
-      - name: Build libraries package
-        run: |
-          source .venv/bin/activate
-          python -m build packages/libraries
+      - name: Build packages
+        run: uv run python -m build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
