@@ -4,6 +4,7 @@ import { useAutoSave } from './useAutoSave';
 import { useBlockStore } from '../stores/blockStore';
 import { useProcessMetadataStore } from '../stores/processMetadataStore';
 import { useFileStore } from '../stores/fileStore';
+import { idb } from '../utils/db';
 
 vi.mock('../stores/blockStore', () => ({
   useBlockStore: vi.fn(),
@@ -203,50 +204,66 @@ describe('useAutoSave', () => {
     expect(localStorage.getItem('rpaforge-autosave-backup')).toBeNull();
   });
 
-  test('hasBackup returns true when backup exists', () => {
-    localStorage.setItem('rpaforge-autosave-backup', 'test-backup');
+  test('hasBackup returns true when backup exists', async () => {
+    vi.mocked(idb.autosave.get).mockResolvedValue({
+      id: 'current-diagram',
+      content: JSON.stringify({ metadata: { id: 'test', name: 'Test' }, nodes: [], edges: [] }),
+      hash: 'abc123',
+      timestamp: Date.now(),
+    });
 
     const { result } = renderHook(() => useAutoSave({ enabled: false }));
 
-    expect(result.current.hasBackup()).toBe(true);
+    await act(async () => {
+      const has = await result.current.hasBackup();
+      expect(has).toBe(true);
+    });
   });
 
-  test('hasBackup returns false when no backup', () => {
+  test('hasBackup returns false when no backup', async () => {
     const { result } = renderHook(() => useAutoSave({ enabled: false }));
 
-    expect(result.current.hasBackup()).toBe(false);
+    await act(async () => {
+      const has = await result.current.hasBackup();
+      expect(has).toBe(false);
+    });
   });
 
-  test('restoreBackup returns parsed backup data', () => {
+  test('restoreBackup returns parsed backup data', async () => {
     const backupData = {
       metadata: { id: 'test', name: 'Test' },
       nodes: [{ id: 'node-1' }],
       edges: [],
     };
-    localStorage.setItem('rpaforge-autosave-backup', JSON.stringify(backupData));
+    vi.mocked(idb.autosave.get).mockResolvedValue({
+      id: 'current-diagram',
+      content: JSON.stringify(backupData),
+      hash: 'abc123',
+      timestamp: Date.now(),
+    });
 
     const { result } = renderHook(() => useAutoSave({ enabled: false }));
 
     let restored;
-    act(() => {
-      restored = result.current.restoreBackup();
+    await act(async () => {
+      restored = await result.current.restoreBackup();
     });
 
     expect(restored).toEqual(backupData);
   });
 
-  test('restoreBackup returns null when no backup', () => {
+  test('restoreBackup returns null when no backup', async () => {
     const { result } = renderHook(() => useAutoSave({ enabled: false }));
 
     let restored;
-    act(() => {
-      restored = result.current.restoreBackup();
+    await act(async () => {
+      restored = await result.current.restoreBackup();
     });
 
     expect(restored).toBeNull();
   });
 
-  test('calls onSave callback after successful save', () => {
+  test('calls onSave callback after successful save', async () => {
     const onSave = vi.fn();
     (mockMetadataStore as { metadata: MockMetadata | null }).metadata = {
       id: 'test-id',
@@ -263,8 +280,8 @@ describe('useAutoSave', () => {
       useAutoSave({ enabled: false, onSave })
     );
 
-    act(() => {
-      result.current.forceSave();
+    await act(async () => {
+      await result.current.forceSave();
     });
 
     expect(onSave).toHaveBeenCalled();
