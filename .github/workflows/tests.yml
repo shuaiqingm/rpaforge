@@ -22,7 +22,7 @@ jobs:
         uses: astral-sh/setup-uv@v4
 
       - name: Install dependencies
-        run: uv pip install -e packages/core pytest pytest-asyncio>=0.23 pytest-cov
+        run: uv pip install --system -e packages/core pytest pytest-asyncio pytest-cov
 
       - name: Run core tests
         run: python -m pytest packages/core/tests --cov=packages/core/src --cov-report=xml --cov-report=term-missing
@@ -50,7 +50,7 @@ jobs:
         uses: astral-sh/setup-uv@v4
 
       - name: Install dependencies
-        run: uv pip install -e packages/libraries pytest pytest-cov
+        run: uv pip install --system -e packages/libraries pytest pytest-cov
 
       - name: Run libraries tests
         run: python -m pytest packages/libraries/tests --cov=packages/libraries/src --cov-report=xml --cov-report=term-missing
@@ -79,7 +79,7 @@ jobs:
 
       - name: Install and run ruff
         run: |
-          uv pip install ruff
+          uv pip install --system ruff
           ruff check packages/
           ruff format --check packages/
 
