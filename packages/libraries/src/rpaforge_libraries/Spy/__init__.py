@@ -156,9 +156,9 @@ def get_element_at_point_desktop(x: int, y: int) -> dict[str, Any] | None:
                 "x": int(rect.left),
                 "y": int(rect.top),
                 "width": int(rect.width()) if callable(rect.width) else int(rect.width),
-                "height": int(rect.height())
-                if callable(rect.height)
-                else int(rect.height),
+                "height": (
+                    int(rect.height()) if callable(rect.height) else int(rect.height)
+                ),
             }
 
         if automation_id:

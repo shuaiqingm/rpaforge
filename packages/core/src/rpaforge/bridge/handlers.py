@@ -1238,6 +1238,7 @@ class BridgeHandlers:
 
     async def _handle_capture_web_element(self, params: dict) -> dict:
         import logging
+
         logger = logging.getLogger("rpaforge.bridge")
         logger.debug("Capturing web element...")
         from rpaforge_libraries.Spy import get_element_at_point_web
@@ -1255,6 +1256,7 @@ class BridgeHandlers:
 
     async def _handle_capture_desktop_element(self, params: dict) -> dict:
         import logging
+
         logger = logging.getLogger("rpaforge.bridge")
         logger.debug("Capturing desktop element...")
         from rpaforge_libraries.Spy import get_element_at_point_desktop

@@ -582,7 +582,8 @@ class WebUI:
     @activity(name="Inspect Page", category="Web")
     def inspect_page(self, _include_frames: bool = True) -> dict[str, Any]:
         self._ensure_page()
-        elements = self._page.evaluate("""() => {
+        elements = self._page.evaluate(
+            """() => {
             function getXPath(el) {
                 if (el.id) return '//' + el.tagName.toLowerCase() + '[@id=\'' + el.id + '\']';
                 const parts = [];
@@ -634,7 +635,8 @@ class WebUI:
                     rect: {x: rect.x, y: rect.y, width: rect.width, height: rect.height}
                 };
             });
-        }""")
+        }"""
+        )
         return {"elements": elements, "total": len(elements), "url": self._page.url}
 
     @activity(name="Highlight Element", category="Web")
