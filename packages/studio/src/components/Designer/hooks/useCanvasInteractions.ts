@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { type Connection, type Edge, type EdgeChange, type Node, type NodeChange } from "@reactflow/core";
+import { type Connection, type Edge, type EdgeChange, type Node, type NodeChange, useReactFlow } from "@reactflow/core";
 import { type BlockData } from "../../../types/blocks";
 import type { Activity } from "../../../types/engine";
 import { useBlockStore } from "../../../stores/blockStore";
@@ -15,8 +15,10 @@ interface ContextMenuState {
 export function useCanvasInteractions() {
   const addNode = useBlockStore((state) => state.addNode);
   const addEdge = useBlockStore((state) => state.addEdge);
+  const updateNodePosition = useBlockStore((state) => state.updateNodePosition);
   const { breakpoints, addBreakpoint, removeBreakpoint } = useDebuggerStore();
   const openDiagram = useDiagramStore((state) => state.openDiagram);
+  const { screenToFlowPosition } = useReactFlow();
 
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     isOpen: false,
@@ -24,7 +26,13 @@ export function useCanvasInteractions() {
     nodeId: null,
   });
 
-  const onNodesChange = useCallback((_changes: NodeChange[]) => {}, []);
+  const onNodesChange = useCallback((changes: NodeChange[]) => {
+    for (const change of changes) {
+      if (change.type === 'position' && change.position) {
+        updateNodePosition(change.id, change.position);
+      }
+    }
+  }, [updateNodePosition]);
 
   const onEdgesChange = useCallback((_changes: EdgeChange[]) => {}, []);
 
@@ -50,36 +58,37 @@ export function useCanvasInteractions() {
       const data = event.dataTransfer.getData("application/json") as string;
       if (!data) return;
 
+      const position = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+
       try {
         const parsedData = JSON.parse(data);
         const { type, data: dragData } = parsedData as { type: "block" | "activity"; data: unknown };
 
-        const nodePosition = { x: 0, y: 0 };
-
         if (type === "block") {
           const blockData = dragData as BlockData;
-          const newBlock = {
+          addNode({
             id: blockData.id,
             type: "block",
-            position: nodePosition,
+            position,
             data: { blockData },
-          };
-          addNode(newBlock);
+          });
         } else if (type === "activity") {
           const activity = dragData as Activity;
-          const newNode = {
+          addNode({
             id: `node-${Date.now()}`,
             type: "activity",
-            position: nodePosition,
+            position,
             data: { activity },
-          };
-          addNode(newNode);
+          });
         }
       } catch (error) {
         console.error("Failed to parse drag data:", error);
       }
     },
-    [addNode],
+    [addNode, screenToFlowPosition],
   );
 
   const onNodeDoubleClick = useCallback(

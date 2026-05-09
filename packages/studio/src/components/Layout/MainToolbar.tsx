@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   FiPlay,
   FiPause,
@@ -43,7 +43,7 @@ interface MainToolbarProps {
   onStepOut?: () => void;
 }
 
-const MainToolbar: React.FC<MainToolbarProps> = ({
+const MainToolbar: React.FC<MainToolbarProps> = React.memo(({
   activeTab,
   onTabChange,
   isConnected: _isConnected,
@@ -70,7 +70,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
   const [showAbout, setShowAbout] = useState(false);
   const speedOptions: ExecutionSpeed[] = [0.5, 1, 2, 5];
 
-  const getExecutionButton = () => {
+  const executionButton = useMemo(() => {
     if (isRunning) {
       if (isPaused) {
         return (
@@ -112,7 +112,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
         Run
       </button>
     );
-  };
+  }, [isRunning, isPaused, hasMetadata, hasNodes, onRun, onPause, onResume]);
 
   const bridgeBadge = {
     starting: 'text-blue-400',
@@ -221,7 +221,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
             </select>
           </div>
 
-          {getExecutionButton()}
+          {executionButton}
           {isRunning && isPaused && (
             <>
               <button
@@ -305,6 +305,8 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
       )}
     </header>
   );
-};
+});
+
+MainToolbar.displayName = 'MainToolbar';
 
 export default MainToolbar;

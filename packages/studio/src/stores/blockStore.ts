@@ -184,9 +184,9 @@ export const useBlockStore = create<BlockState>()(immer((set, get) => ({
       return false;
     }
 
-    set((state) => ({
-      nodes: [...state.nodes, normalizedNode],
-    }));
+    set((state) => {
+      state.nodes.push(normalizedNode);
+    });
     return true;
   },
 
@@ -196,10 +196,10 @@ export const useBlockStore = create<BlockState>()(immer((set, get) => ({
       return false;
     }
 
-    set((state) => ({
-      nodes: state.nodes.filter((n) => n.id !== id),
-      edges: state.edges.filter((e) => e.source !== id && e.target !== id),
-    }));
+    set((state) => {
+      state.nodes = state.nodes.filter((n) => n.id !== id);
+      state.edges = state.edges.filter((e) => e.source !== id && e.target !== id);
+    });
     return true;
   },
 
@@ -239,9 +239,12 @@ export const useBlockStore = create<BlockState>()(immer((set, get) => ({
   },
 
   updateNodePosition: (id, position) => {
-    set((state) => ({
-      nodes: state.nodes.map((node) => (node.id === id ? { ...node, position } : node)),
-    }));
+    set((state) => {
+      const idx = state.nodes.findIndex((n) => n.id === id);
+      if (idx !== -1) {
+        state.nodes[idx].position = position;
+      }
+    });
   },
 
   updateEdge: (id, updates) => {

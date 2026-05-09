@@ -19,7 +19,7 @@ interface ActivityPaletteSidebarProps {
   onStepOut: () => void;
 }
 
-const ActivityPaletteSidebar: React.FC<ActivityPaletteSidebarProps> = ({
+const ActivityPaletteSidebar: React.FC<ActivityPaletteSidebarProps> = React.memo(({
   activeTab,
   isPaused,
   isStepLoading,
@@ -29,7 +29,8 @@ const ActivityPaletteSidebar: React.FC<ActivityPaletteSidebarProps> = ({
 }) => {
   const [debugTab, setDebugTab] = useState<'variables' | 'breakpoints'>('variables');
   const [designerTab, setDesignerTab] = useState<'activities' | 'diagrams'>('activities');
-  const { activeDiagramId, setActiveDiagram } = useDiagramStore();
+  const activeDiagramId = useDiagramStore((s) => s.activeDiagramId);
+  const setActiveDiagram = useDiagramStore((s) => s.setActiveDiagram);
 
   return (
     <aside className="w-64 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 overflow-hidden flex-shrink-0">
@@ -139,6 +140,8 @@ const ActivityPaletteSidebar: React.FC<ActivityPaletteSidebarProps> = ({
       )}
     </aside>
   );
-};
+});
+
+ActivityPaletteSidebar.displayName = 'ActivityPaletteSidebar';
 
 export default ActivityPaletteSidebar;

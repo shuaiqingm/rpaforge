@@ -11,7 +11,7 @@ const DiagramTabs: React.FC<DiagramTabsProps> = ({
   onSelectDiagram,
   onCloseDiagram,
 }) => {
-  const { project, activeDiagramId, openDiagramIds, getDiagram, dirtyDiagramIds } = useDiagramStore();
+  const { project, activeDiagramId, openDiagramIds, getDiagram, isDiagramDirty } = useDiagramStore();
   const [pendingCloseId, setPendingCloseId] = useState<string | null>(null);
 
   const getDiagramIcon = (type: DiagramType) => {
@@ -27,12 +27,12 @@ const DiagramTabs: React.FC<DiagramTabsProps> = ({
 
   const handleCloseClick = useCallback((e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (dirtyDiagramIds.has(id)) {
+    if (isDiagramDirty(id)) {
       setPendingCloseId(id);
     } else {
       onCloseDiagram(id);
     }
-  }, [dirtyDiagramIds, onCloseDiagram]);
+  }, [isDiagramDirty, onCloseDiagram]);
 
   const handleConfirmClose = useCallback(() => {
     if (pendingCloseId) {
@@ -57,7 +57,7 @@ const DiagramTabs: React.FC<DiagramTabsProps> = ({
           if (!diagram) return null;
 
           const isActive = id === activeDiagramId;
-          const isDirty = dirtyDiagramIds.has(id);
+          const isDirty = isDiagramDirty(id);
 
           return (
             <div

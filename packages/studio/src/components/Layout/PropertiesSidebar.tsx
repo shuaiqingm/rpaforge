@@ -8,7 +8,7 @@ interface PropertiesSidebarProps {
   activeTab: 'designer' | 'debugger' | 'console';
 }
 
-const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({ activeTab }) => {
+const PropertiesSidebar: React.FC<PropertiesSidebarProps> = React.memo(({ activeTab }) => {
   return (
     <aside className="w-72 border-l border-slate-200 dark:border-slate-700 overflow-hidden flex-shrink-0 flex flex-col">
       {activeTab === 'designer' && (
@@ -31,6 +31,8 @@ const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({ activeTab }) => {
       )}
     </aside>
   );
-};
+});
+
+PropertiesSidebar.displayName = 'PropertiesSidebar';
 
 export default PropertiesSidebar;

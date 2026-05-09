@@ -165,7 +165,20 @@ const ProcessCanvasInner: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    setNodes(storeNodes);
+    // Merge store changes into ReactFlow state without replacing internal node state
+    // (positionAbsolute, selected, dragging) to prevent existing nodes from visually jumping.
+    setNodes((currentNodes) => {
+      const currentMap = new Map(currentNodes.map((n) => [n.id, n]));
+      return storeNodes.map((storeNode) => {
+        const current = currentMap.get(storeNode.id);
+        if (current) {
+          // Node already tracked by ReactFlow — preserve its internal state,
+          // only propagate data/type updates from the store.
+          return { ...current, data: storeNode.data, type: storeNode.type };
+        }
+        return storeNode;
+      });
+    });
   }, [setNodes, storeNodes]);
 
   useEffect(() => {

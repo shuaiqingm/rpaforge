@@ -31,7 +31,7 @@ interface StatusBarProps {
   onToggleConsole: () => void;
 }
 
-const StatusBar: React.FC<StatusBarProps> = ({
+const StatusBar: React.FC<StatusBarProps> = React.memo(({
   activeTab,
   bridgeState,
   capabilities,
@@ -158,6 +158,8 @@ const StatusBar: React.FC<StatusBarProps> = ({
       <StorageDialog isOpen={showStorageDialog} onClose={() => setShowStorageDialog(false)} />
     </footer>
   );
-};
+});
+
+StatusBar.displayName = 'StatusBar';
 
 export default StatusBar;

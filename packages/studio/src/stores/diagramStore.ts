@@ -49,7 +49,7 @@ interface DiagramState {
   recentDiagrams: string[];
   folders: string[];
   diagramDocuments: Record<string, DiagramDocument>;
-  dirtyDiagramIds: Set<string>;
+  dirtyDiagramIds: string[];
 
   createProject: (name: string) => void;
   loadProject: (
@@ -112,7 +112,7 @@ export const useDiagramStore = create<DiagramState>()(
       recentDiagrams: [],
       folders: [],
       diagramDocuments: {},
-      dirtyDiagramIds: new Set<string>(),
+      dirtyDiagramIds: [],
 
       createProject: (name) => {
         const mainDiagram: DiagramMetadata = {
@@ -430,25 +430,22 @@ export const useDiagramStore = create<DiagramState>()(
       },
 
       markDiagramDirty: (id, dirty) => {
-        set((state) => {
-          const newDirtyIds = new Set(state.dirtyDiagramIds);
-          if (dirty) {
-            newDirtyIds.add(id);
-          } else {
-            newDirtyIds.delete(id);
-          }
-          return { dirtyDiagramIds: newDirtyIds };
-        });
+        set((state) => ({
+          dirtyDiagramIds: dirty
+            ? state.dirtyDiagramIds.includes(id) ? state.dirtyDiagramIds : [...state.dirtyDiagramIds, id]
+            : state.dirtyDiagramIds.filter((dId) => dId !== id),
+        }));
       },
 
       isDiagramDirty: (id) => {
-        return get().dirtyDiagramIds.has(id);
+        return get().dirtyDiagramIds.includes(id);
       },
 
       getOpenDiagrams: () => {
         const project = get().project;
         if (!project) return [];
-        return project.diagrams.filter((d) => get().openDiagramIds.includes(d.id));
+        const openSet = new Set(get().openDiagramIds);
+        return project.diagrams.filter((d) => openSet.has(d.id));
       },
     }),
     {

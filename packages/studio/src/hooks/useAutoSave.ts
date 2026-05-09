@@ -127,10 +127,38 @@ export function useAutoSave(options: AutoSaveOptions = {}): {
   const writeFile = useProjectFsStore((state) => state.writeFile);
   const variables = useVariableStore((state) => state.variables);
 
+  // Refs to hold latest values so performSave has stable identity
+  const nodesRef = useRef(nodes);
+  const edgesRef = useRef(edges);
+  const metadataRef = useRef(metadata);
+  const isDirtyRef = useRef(isDirty);
+  const projectRef = useRef(project);
+  const activeDiagramIdRef = useRef(activeDiagramId);
+  const projectPathRef = useRef(projectPath);
+  const variablesRef = useRef(variables);
+
+  useEffect(() => { nodesRef.current = nodes; }, [nodes]);
+  useEffect(() => { edgesRef.current = edges; }, [edges]);
+  useEffect(() => { metadataRef.current = metadata; }, [metadata]);
+  useEffect(() => { isDirtyRef.current = isDirty; }, [isDirty]);
+  useEffect(() => { projectRef.current = project; }, [project]);
+  useEffect(() => { activeDiagramIdRef.current = activeDiagramId; }, [activeDiagramId]);
+  useEffect(() => { projectPathRef.current = projectPath; }, [projectPath]);
+  useEffect(() => { variablesRef.current = variables; }, [variables]);
+
   const lastSaveRef = useRef<string>('');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // performSave reads from refs — stable identity, no interval reset on every diagram change
   const performSave = useCallback(async () => {
+    const metadata = metadataRef.current;
+    const nodes = nodesRef.current;
+    const edges = edgesRef.current;
+    const project = projectRef.current;
+    const activeDiagramId = activeDiagramIdRef.current;
+    const projectPath = projectPathRef.current;
+    const variables = variablesRef.current;
+
     if (!metadata || !nodes.length) {
       return;
     }
@@ -179,7 +207,7 @@ export function useAutoSave(options: AutoSaveOptions = {}): {
       logger.error('Auto-save failed', e);
       onError?.(e instanceof Error ? e : new Error('Auto-save failed'));
     }
-  }, [metadata, nodes, edges, setLastSaved, markDirty, onSave, onError, projectPath, project, activeDiagramId, writeFile, saveDiagramDocument]);
+  }, [setLastSaved, markDirty, onSave, onError, writeFile, saveDiagramDocument]);
 
   const forceSave = useCallback(() => {
     performSave();
@@ -207,7 +235,7 @@ export function useAutoSave(options: AutoSaveOptions = {}): {
     }
 
     intervalRef.current = setInterval(() => {
-      if (isDirty) {
+      if (isDirtyRef.current) {
         performSave();
       }
     }, intervalMs);
@@ -218,11 +246,11 @@ export function useAutoSave(options: AutoSaveOptions = {}): {
         intervalRef.current = null;
       }
     };
-  }, [enabled, intervalMs, isDirty, performSave]);
+  }, [enabled, intervalMs, performSave]);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isDirty) {
+      if (isDirtyRef.current) {
         performSave();
         e.preventDefault();
         e.returnValue = '';
@@ -231,7 +259,7 @@ export function useAutoSave(options: AutoSaveOptions = {}): {
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isDirty, performSave]);
+  }, [performSave]);
 
   return {
     forceSave,
