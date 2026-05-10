@@ -22,6 +22,12 @@ from rpaforge.core.execution import (
 from rpaforge.core.executor import ProcessExecutor, StopExecution
 from rpaforge.core.interfaces import Executor
 from rpaforge.core.safe_evaluator import safe_eval
+from rpaforge.core.validator import (
+    ValidationError as ProcessValidationError,
+)
+from rpaforge.core.validator import (
+    validate_process,
+)
 
 if TYPE_CHECKING:
     pass
@@ -115,6 +121,13 @@ class ProcessRunner:
         with self._lock:
             if self._state != RunnerState.IDLE:
                 raise RuntimeError("Runner is not idle")
+
+            validation_result = validate_process(process)
+            if not validation_result.is_valid:
+                error_messages = [e.message for e in validation_result.errors]
+                raise ProcessValidationError(
+                    f"Process validation failed: {'; '.join(error_messages)}"
+                )
 
             self._state = RunnerState.RUNNING
             self._stop_requested = False

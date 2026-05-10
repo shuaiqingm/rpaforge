@@ -9,6 +9,12 @@ from __future__ import annotations
 from typing import Any
 
 from rpaforge.core.execution import ActivityCall, Process, Task
+from rpaforge.core.validator import (
+    ProcessValidator,
+)
+from rpaforge.core.validator import (
+    ValidationError as DiagramValidationError,
+)
 
 
 class DiagramConverter:
@@ -26,6 +32,14 @@ class DiagramConverter:
         start_node = self._find_start_node(nodes)
         if not start_node:
             return Process(name="Empty Process")
+
+        validator = ProcessValidator()
+        result = validator.validate_diagram(diagram)
+        if not result.is_valid and result.errors:
+            first_error = result.errors[0]
+            raise DiagramValidationError(
+                f"Diagram validation failed: {first_error.message} ({first_error.error_type})"
+            )
 
         start_data = nodes[start_node].get("data", {}).get("blockData", {})
         process_name = start_data.get("processName", "Main Process")
