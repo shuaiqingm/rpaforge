@@ -187,12 +187,11 @@ describe('useAutoSave', () => {
     mockBlockStore.edges = [];
 
     const { result } = renderHook(() =>
-      useAutoSave({ enabled: true, intervalMs: 10000 })
+      useAutoSave({ enabled: false, intervalMs: 10000 })
     );
 
-    await act(async () => {
+    act(() => {
       result.current.forceSave();
-      await Promise.resolve();
     });
 
     expect(mockFileStore.setLastSaved).toHaveBeenCalled();
@@ -284,8 +283,8 @@ describe('useAutoSave', () => {
       useAutoSave({ enabled: false, onSave })
     );
 
-    await act(async () => {
-      await result.current.forceSave();
+    act(() => {
+      result.current.forceSave();
     });
 
     expect(onSave).toHaveBeenCalled();
