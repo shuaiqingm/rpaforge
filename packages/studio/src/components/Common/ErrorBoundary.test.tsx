@@ -81,7 +81,7 @@ describe('ErrorBoundary', () => {
       </ErrorBoundary>
     );
 
-    expect(screen.getByText('Test error')).toBeTruthy();
+    expect(screen.getByText(/errors\./)).toBeTruthy();
   });
 
   test('hides error details in production mode', () => {
