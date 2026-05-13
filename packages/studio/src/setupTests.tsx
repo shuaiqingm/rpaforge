@@ -215,3 +215,18 @@ if (typeof window !== 'undefined') {
   }
 }
 
+console.log('[TEST SETUP] Mocking i18n');
+vi.mock('../i18n', () => ({
+  config: {
+    supportedLanguages: ['en', 'ru'],
+    defaultLanguage: 'en',
+    namespaces: [],
+  },
+  default: {
+    language: 'en',
+    changeLanguage: () => Promise.resolve(),
+    use: () => ({ use: () => ({ init: () => ({}) }) }),
+    init: () => ({}),
+  },
+}));
+
