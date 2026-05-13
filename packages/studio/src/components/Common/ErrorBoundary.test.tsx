@@ -81,7 +81,8 @@ describe('ErrorBoundary', () => {
       </ErrorBoundary>
     );
 
-    expect(screen.getByText(/errors\./)).toBeTruthy();
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+    expect(screen.getByText('errors.somethingWentWrongDesc')).toBeInTheDocument();
   });
 
   test('hides error details in production mode', () => {
