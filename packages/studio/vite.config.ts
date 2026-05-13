@@ -18,10 +18,14 @@ function copyPublicPlugin() {
       
       if (fs.existsSync(publicDir)) {
         fs.readdirSync(publicDir).forEach(file => {
-          fs.copyFileSync(
-            path.join(publicDir, file),
-            path.join(distDir, file)
-          );
+          if (file === 'locales') return;
+          const srcPath = path.join(publicDir, file);
+          const destPath = path.join(distDir, file);
+          if (fs.statSync(srcPath).isDirectory()) {
+            fs.cpSync(srcPath, destPath, { recursive: true });
+          } else {
+            fs.copyFileSync(srcPath, destPath);
+          }
         });
       }
     }
