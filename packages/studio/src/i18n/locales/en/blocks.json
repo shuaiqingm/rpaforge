@@ -108,6 +108,10 @@
     "expressionPlaceholder": "Any expression or value",
     "descriptionPlaceholder": "Variable description..."
   },
+  "tryCatch_handlers": "Exception handlers",
+  "tryCatch_handlerLabel": "Handler {{index}}",
+  "tryCatch_exceptionType": "Exception type",
+  "tryCatch_variable": "Variable",
   "propertyEditors": {
     "tryCatch": {
       "handlers": "Exception handlers",
@@ -115,6 +119,8 @@
       "exceptionType": "Exception type",
       "variable": "Variable",
       "enableFinally": "Enable FINALLY path",
+      "addHandler": "Add handler",
+      "removeHandler": "Remove handler",
       "description": "Success, EXCEPT and optional FINALLY handles are exposed directly on the block."
     },
     "retryScope": {
