@@ -1,5 +1,7 @@
 import { vi } from 'vitest';
 
+console.log('[TEST SETUP] Mocking react-i18next');
+
 vi.mock('react-i18next', () => ({
   withTranslation: (ns: string) => (Component: any) => {
     const WrappedComponent = (props: any) => {
