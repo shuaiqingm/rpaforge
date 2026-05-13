@@ -68,8 +68,8 @@ describe('PropertyPanel block editors', () => {
 
     renderWithSelectedBlock(blockData);
 
-    expect(screen.getByText('Cases')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /Add case/i }));
+    expect(screen.getByText('propertyEditors.switch.cases')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /propertyEditors.switch.addCase/i }));
 
     const nextCases = (useBlockStore.getState().nodes[0].data.blockData as Extract<BlockData, { type: 'switch' }>).cases;
     expect(nextCases).toHaveLength(2);
@@ -105,8 +105,8 @@ describe('PropertyPanel block editors', () => {
 
     renderWithSelectedBlock(blockData);
 
-    expect(screen.getByText('Exception handlers')).toBeTruthy();
-    fireEvent.click(screen.getByLabelText('Enable FINALLY path'));
+    expect(screen.getByText('propertyEditors.tryCatch.handlers')).toBeTruthy();
+    fireEvent.click(screen.getByLabelText('propertyEditors.tryCatch.enableFinally'));
 
     const nextBlock = useBlockStore.getState().nodes[0].data.blockData as Extract<BlockData, { type: 'try-catch' }>;
     expect(nextBlock.finallyBlock).toEqual([]);

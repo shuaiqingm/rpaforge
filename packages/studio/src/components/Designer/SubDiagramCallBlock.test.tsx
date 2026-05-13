@@ -45,7 +45,7 @@ describe('SubDiagramCallBlock', () => {
       />
     );
 
-    fireEvent.click(screen.getByTitle('Open diagram'));
+    fireEvent.click(screen.getByTitle('propertyEditors.subDiagram.openDiagram'));
 
     expect(useDiagramStore.getState().activeDiagramId).toBe(diagram.id);
   });
