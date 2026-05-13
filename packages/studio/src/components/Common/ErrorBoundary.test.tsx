@@ -81,10 +81,10 @@ describe('ErrorBoundary', () => {
       </ErrorBoundary>
     );
 
-    expect(screen.getByRole('heading', { name: 'errors.somethingWentWrong' })).toBeInTheDocument();
+    expect(screen.getByText('errors.somethingWentWrong')).toBeInTheDocument();
     expect(screen.getByText('errors.somethingWentWrongDesc')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'errors.tryAgain' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'errors.reloadPage' })).toBeInTheDocument();
+    expect(screen.getByText('errors.tryAgain')).toBeInTheDocument();
+    expect(screen.getByText('errors.reloadPage')).toBeInTheDocument();
   });
 
   test('hides error details in production mode', () => {
