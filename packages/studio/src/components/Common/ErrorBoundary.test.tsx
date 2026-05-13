@@ -81,10 +81,10 @@ describe('ErrorBoundary', () => {
       </ErrorBoundary>
     );
 
-    expect(screen.getByText('errors.somethingWentWrong')).toBeInTheDocument();
-    expect(screen.getByText('errors.somethingWentWrongDesc')).toBeInTheDocument();
-    expect(screen.getByText('errors.tryAgain')).toBeInTheDocument();
-    expect(screen.getByText('errors.reloadPage')).toBeInTheDocument();
+    expect(screen.getByText('errors.somethingWentWrong')).toBeTruthy();
+    expect(screen.getByText('errors.somethingWentWrongDesc')).toBeTruthy();
+    expect(screen.getByText('errors.tryAgain')).toBeTruthy();
+    expect(screen.getByText('errors.reloadPage')).toBeTruthy();
   });
 
   test('hides error details in production mode', () => {
