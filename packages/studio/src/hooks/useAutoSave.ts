@@ -224,13 +224,13 @@ export function useAutoSave(options: AutoSaveOptions = {}): {
     });
   }, [performSave, pendingSaveRef, rafRef]);
 
-  const forceSave = useCallback(() => {
+  const forceSave = useCallback(async () => {
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     }
     pendingSaveRef.current = false;
-    performSave();
+    await performSave();
   }, [performSave]);
 
   const clearBackup = useCallback(() => {

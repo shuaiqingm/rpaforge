@@ -190,8 +190,8 @@ describe('useAutoSave', () => {
       useAutoSave({ enabled: false, intervalMs: 10000 })
     );
 
-    act(() => {
-      result.current.forceSave();
+    await act(async () => {
+      await result.current.forceSave();
     });
 
     expect(mockFileStore.setLastSaved).toHaveBeenCalled();
@@ -283,8 +283,8 @@ describe('useAutoSave', () => {
       useAutoSave({ enabled: false, onSave })
     );
 
-    act(() => {
-      result.current.forceSave();
+    await act(async () => {
+      await result.current.forceSave();
     });
 
     expect(onSave).toHaveBeenCalled();
