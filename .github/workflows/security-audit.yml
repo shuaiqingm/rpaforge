@@ -41,7 +41,7 @@ jobs:
         if: always()
         run: |
           if [ -f pip-audit.json ]; then
-            VULN_COUNT=$(jq '[.[] | select(.vulns | length > 0)] | length' pip-audit.json)
+            VULN_COUNT=$(jq '[.dependencies[] | select(.vulns? and (.vulns | length > 0))] | length' pip-audit.json)
             if [ "$VULN_COUNT" -gt 0 ]; then
               echo "Found $VULN_COUNT packages with vulnerabilities"
               exit 1
