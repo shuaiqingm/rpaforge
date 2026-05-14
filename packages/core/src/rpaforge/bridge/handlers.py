@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
+import shutil
 import time
 from typing import TYPE_CHECKING, Any
 
@@ -23,6 +24,8 @@ from rpaforge.bridge.events import (
 )
 from rpaforge.bridge.protocol import JSONRPCError, JSONRPCErrorCode
 from rpaforge.core.activity import list_activities, list_libraries
+
+_RUFF_EXECUTABLE: str | None = shutil.which("ruff")
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -943,8 +946,14 @@ class BridgeHandlers:
                 f.write(code)
                 temp_path = f.name
 
+            if _RUFF_EXECUTABLE is None:
+                raise JSONRPCError(
+                    code=JSONRPCErrorCode.INTERNAL_ERROR,
+                    message="ruff is not installed or not found in PATH",
+                )
+
             result = subprocess.run(
-                ["ruff", "format", temp_path],
+                [_RUFF_EXECUTABLE, "format", temp_path],
                 capture_output=True,
                 text=True,
                 timeout=10,
@@ -1044,8 +1053,14 @@ class BridgeHandlers:
                 f.write(code)
                 temp_path = f.name
 
+            if _RUFF_EXECUTABLE is None:
+                raise JSONRPCError(
+                    code=JSONRPCErrorCode.INTERNAL_ERROR,
+                    message="ruff is not installed or not found in PATH",
+                )
+
             result = subprocess.run(
-                ["ruff", "check", temp_path, "--output-format=json"],
+                [_RUFF_EXECUTABLE, "check", temp_path, "--output-format=json"],
                 capture_output=True,
                 text=True,
                 timeout=10,
