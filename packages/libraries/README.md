@@ -7,77 +7,96 @@ RPA automation libraries for RPAForge.
 
 ## Included Libraries
 
-| Library | Description | Status |
-|---------|-------------|--------|
-| `DesktopUI` | Windows desktop automation (Win32, WPF) | 🟡 In Progress |
-| `WebUI` | Web automation with Playwright | 🟡 In Progress |
-| `OCR` | Text recognition with Tesseract/EasyOCR | 🟡 In Progress |
-| `Excel` | Excel file operations | 🟡 In Progress |
-| `Database` | Database operations with SQLAlchemy | 🟡 In Progress |
-| `Credentials` | Secure credential management | 🟡 In Progress |
+| Library | Activities | Description | Status |
+|---------|-----------|-------------|--------|
+| `DesktopUI` | 20+ | Windows desktop automation (Win32, WPF) | 🟡 In Progress |
+| `WebUI` | 15+ | Web automation with Playwright | 🟡 In Progress |
+| `Excel` | 8+ | Excel file operations | 🟡 In Progress |
+| `DataFrames` | 28+ | Tabular data — filter, sort, join, aggregate (Polars) | ✅ Stable |
+| `Database` | 6+ | Database operations with SQLAlchemy | 🟡 In Progress |
+| `OCR` | 5+ | Text recognition with Tesseract/EasyOCR | 🟡 In Progress |
+| `Credentials` | 4+ | Secure credential management | 🟡 In Progress |
+| `File` | 8+ | File and folder operations | 🟡 In Progress |
+| `HTTP` | 5+ | REST API requests | 🟡 In Progress |
+| `DateTime` | 6+ | Date/time utilities | 🟡 In Progress |
+| `String` | 7+ | String manipulation | 🟡 In Progress |
+| `Variables` | 4+ | Variable management and scoping | 🟡 In Progress |
+| `Flow` | 4+ | Control flow — if, while, for | 🟡 In Progress |
+| `Spy` | 3+ | Live UI element inspector overlay | 🟡 In Progress |
 
 ## Installation
 
 ```bash
-# Core libraries
+# Core libraries (no optional deps)
 pip install rpaforge-libraries
 
 # With optional dependencies
-pip install rpaforge-libraries[desktop]   # Desktop UI automation
-pip install rpaforge-libraries[web]       # Web UI automation
-pip install rpaforge-libraries[ocr]       # OCR support
-pip install rpaforge-libraries[excel]     # Excel operations
-pip install rpaforge-libraries[all]       # All dependencies
+pip install rpaforge-libraries[desktop]    # Desktop UI automation (pywinauto)
+pip install rpaforge-libraries[web]        # Web UI automation (playwright)
+pip install rpaforge-libraries[ocr]        # OCR support (tesseract, easyocr)
+pip install rpaforge-libraries[excel]      # Excel operations (openpyxl)
+pip install rpaforge-libraries[dataframes] # Tabular data (polars)
+pip install rpaforge-libraries[all]        # All dependencies
 ```
 
 ## Usage
 
+### DataFrames
+
+```python
+from rpaforge_libraries.DataFrames import DataFrames
+
+df = DataFrames()
+
+# Load data
+df.read_csv("sales.csv", frame_name="sales")
+
+# Filter, sort, aggregate
+df.filter_rows("sales", "amount", ">", "1000", result_frame="big_sales")
+df.sort("big_sales", by=["amount"], descending=True, result_frame="sorted")
+total = df.aggregate("sorted", "amount", "sum")
+
+# Export
+df.write_csv("sorted", "top_sales.csv")
+```
+
 ### Desktop UI
 
-```robot
-*** Settings ***
-Library    RPAForge.DesktopUI
+```python
+from rpaforge_libraries.DesktopUI import DesktopUI
 
-*** Tasks ***
-Automate Notepad
-    Open Application    notepad.exe
-    Wait For Window     Untitled - Notepad    timeout=10s
-    Input Text    Hello from RPAForge!
-    ${text}=    Get Window Text
-    Log    ${text}
-    Close Window
+ui = DesktopUI()
+ui.open_application("notepad.exe")
+ui.wait_for_window("Notepad", timeout="10s")
+ui.input_text("Hello from RPAForge!")
+ui.close_window()
 ```
 
 ### Web UI
 
-```robot
-*** Settings ***
-Library    RPAForge.WebUI
+```python
+from rpaforge_libraries.WebUI import WebUI
 
-*** Tasks ***
-Login Example
-    Open Browser    https://example.com/login
-    Input Text      id:username    myuser
-    Input Text      id:password    mypass
-    Click Button    id:login-btn
-    Wait For Page Load
-    Close Browser
+web = WebUI()
+web.open_browser("https://example.com/login")
+web.input_text("id:username", "myuser")
+web.input_text("id:password", "mypass")
+web.click_button("id:login-btn")
+web.wait_for_page_load()
+web.close_browser()
 ```
 
 ### Excel
 
-```robot
-*** Settings ***
-Library    RPAForge.Excel
+```python
+from rpaforge_libraries.Excel import Excel
 
-*** Tasks ***
-Process Invoice
-    Open Workbook    invoice.xlsx
-    ${data}=    Read Worksheet    Sheet1
-    FOR    ${row}    IN    @{data}
-        Log    Processing: ${row}[Customer]
-    END
-    Close Workbook
+xls = Excel()
+xls.open_workbook("invoice.xlsx")
+data = xls.read_worksheet("Sheet1")
+for row in data:
+    print(f"Processing: {row['Customer']}")
+xls.close_workbook()
 ```
 
 ## License

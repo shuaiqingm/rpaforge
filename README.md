@@ -48,7 +48,7 @@ print(f"Status: {result.status}")
 |---|---|
 | **Visual Designer** | Drag-and-drop workflow builder powered by React Flow — nodes, edges, sub-diagrams, zoom/pan, mini-map |
 | **Integrated Debugger** | Breakpoints, step over/into/out, variable inspection, call stack, conditional stops |
-| **14 RPA Libraries** | 55+ ready-made activities covering Desktop, Web, Excel, Database, OCR, HTTP, Credentials and more |
+| **14 RPA Libraries** | 80+ ready-made activities covering Desktop, Web, Excel, DataFrames, Database, OCR, HTTP, Credentials and more |
 | **Python Bridge** | Asyncio JSON-RPC server — Electron talks to Python over IPC with full type safety |
 | **Code Generation** | Diagram → Python, with topology validation before every run |
 | **Security First** | SQL injection, path traversal, unsafe `getattr`, and IPC payload validation built-in (v0.3.1) |
@@ -188,6 +188,7 @@ playwright install    # Downloads browser binaries
 | **DesktopUI** | 20+ | Windows UI automation — Win32, WPF, Java | pywinauto, pillow |
 | **WebUI** | 15+ | Browser automation (Chrome, Firefox, Safari) | playwright |
 | **Excel** | 8+ | Read/write XLSX spreadsheets | openpyxl |
+| **DataFrames** | 28+ | Tabular data operations — filter, sort, join, aggregate | polars |
 | **Database** | 6+ | SQL queries via SQLAlchemy ORM | sqlalchemy |
 | **OCR** | 5+ | Text recognition — Tesseract + EasyOCR | pytesseract, easyocr |
 | **Credentials** | 4+ | Encrypted OS credential store | cryptography, keyring |
@@ -202,9 +203,10 @@ playwright install    # Downloads browser binaries
 Install only what you need:
 
 ```bash
-pip install -e "packages/libraries[desktop]"   # DesktopUI
-pip install -e "packages/libraries[web]"        # WebUI
-pip install -e "packages/libraries[all]"        # Everything
+pip install -e "packages/libraries[desktop]"    # DesktopUI
+pip install -e "packages/libraries[web]"         # WebUI
+pip install -e "packages/libraries[dataframes]"  # DataFrames (polars)
+pip install -e "packages/libraries[all]"         # Everything
 ```
 
 ---
@@ -248,22 +250,33 @@ pnpm build        # Production build
 
 | Package | Description | Version | Status |
 |---------|-------------|---------|--------|
-| `rpaforge-core` | Engine, debugger, JSON-RPC bridge | v0.3.1 | ✅ Stable |
-| `rpaforge-libraries` | 14 RPA library modules | v0.3.1 | ✅ Stable |
-| `rpaforge-studio` | Electron + React desktop UI | v0.3.1 | 🔄 Alpha |
+| `rpaforge-core` | Engine, debugger, JSON-RPC bridge | v0.3.3 | ✅ Stable |
+| `rpaforge-libraries` | 14 RPA library modules | v0.3.3 | ✅ Stable |
+| `rpaforge-studio` | Electron + React desktop UI | v0.3.3 | 🔄 Alpha |
 | `rpaforge-orchestrator` | Control Tower | — | 🔜 Planned |
 
 ---
 
 ## Roadmap
 
-### v0.3.1 — Security & Stability *(current)*
+### v0.3.1 — Security & Stability *(released)*
 - ✅ SQL injection, path traversal, unsafe `getattr` mitigations
 - ✅ IPC payload validation with strict schema enforcement
 - ✅ IndexedDB infrastructure — autosave, variables, history
 - ✅ Ruff-based inline Python validation with error highlighting
 - ✅ Persistent logging with file rotation
 - ✅ Freeze mode for Spy overlay
+
+### v0.3.2 — Reliability *(released)*
+- ✅ Serialized lifecycle lock for `_handle_run_diagram` — eliminates race conditions under concurrent execution
+- ✅ Secure `ruff` executable resolution via `shutil.which()`
+- ✅ Dependency security audit — resolved 14 Dependabot alerts via npm overrides
+
+### v0.3.3 — DataFrames & Debug UX *(current)*
+- ✅ **DataFrames library** — 28 tabular data activities powered by Polars (load, filter, sort, join, aggregate, and more)
+- ✅ **DataFrame variable type** — first-class `dataframe` type in the visual designer
+- ✅ **Visual table preview in debugger** — inspect DataFrame contents inline when stopped at a breakpoint
+- ✅ i18n fixes — all UI strings translated to English and Russian
 
 ### v0.4.0 — Enhanced Workflow *(planned)*
 - [ ] Smart activity recorder — capture and replay user actions

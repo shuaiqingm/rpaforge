@@ -4,7 +4,7 @@
 [![Python Support](https://img.shields.io/pypi/pyversions/rpaforge-core.svg)](https://pypi.org/project/rpaforge-core/)
 [![License](https://img.shields.io/github/license/chelslava/rpaforge)](LICENSE)
 
-Core engine for RPAForge - native Python execution with extended debugging, recording, and execution capabilities.
+Core engine for RPAForge — native Python execution with full debugging, recording, and IPC bridge capabilities.
 
 ## Installation
 
@@ -15,27 +15,30 @@ pip install rpaforge-core
 ## Usage
 
 ```python
-from rpaforge import StudioEngine, Debugger
+from rpaforge import StudioEngine
+from rpaforge_libraries.DesktopUI import DesktopUI
 
-# Create an execution engine
 engine = StudioEngine()
+engine.executor.register_library("DesktopUI", DesktopUI())
 
-# Run a simple process
-result = engine.run_string("""
-*** Tasks ***
-Example Task
-    Log    Hello from RPAForge!
-""")
+builder = engine.create_process("Notepad Automation")
+builder.add_task("Open and Type", [
+    ("DesktopUI.Open Application", {"executable": "notepad.exe"}),
+    ("DesktopUI.Wait For Window",  {"title": "Notepad", "timeout": "10s"}),
+    ("DesktopUI.Input Text",       {"text": "Hello from RPAForge!"}),
+    ("DesktopUI.Close Window",     {}),
+])
 
-print(result.suite.tests[0].status)  # PASS
+result = engine.run(builder.build())
+print(f"Status: {result.status}")
 ```
 
 ## Features
 
-- **Engine**: Native Python execution
-- **Debugger**: Breakpoints, step execution, variable watching
-- **Recorder**: Record user actions to automation scripts
-- **IPC Bridge**: Communication interface for UI integration
+- **Engine**: Native Python execution with topology validation and code generation
+- **Debugger**: Breakpoints, step over/into/out, variable inspection, call stack
+- **Recorder**: Record user actions to automation diagrams
+- **IPC Bridge**: Asyncio JSON-RPC server for Electron ↔ Python communication
 
 ## Development
 
@@ -48,7 +51,6 @@ pytest tests/ -v
 
 # Format code
 ruff format src/
-isort src/
 ```
 
 ## License
