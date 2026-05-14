@@ -94,7 +94,8 @@ export type ActivityParamType =
   | 'secret'
   | 'code'
   | 'list'
-  | 'dict';
+  | 'dict'
+  | 'dataframe';
 
 export interface ActivityParam {
   name: string;

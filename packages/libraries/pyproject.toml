@@ -62,8 +62,11 @@ spy = [
     "websocket-client>=1.0",
     "pynput>=1.7",
 ]
+dataframes = [
+    "polars>=0.20",
+]
 all = [
-    "rpaforge-libraries[desktop,web,ocr,excel,database,keystore,spy]",
+    "rpaforge-libraries[desktop,web,ocr,excel,database,keystore,spy,dataframes]",
 ]
 dev = [
     "pytest>=7.0",

@@ -8,6 +8,67 @@ import { useDiagramStore } from '../../stores/diagramStore';
 import type { Variable } from '../../types/engine';
 import VariableDialog, { type VariableDefinition } from '../Designer/VariableDialog';
 
+interface DataFrameValue {
+  __type: 'dataframe';
+  frame_name: string;
+  shape: { rows: number; cols: number };
+  columns: string[];
+  preview: Array<Record<string, unknown>>;
+}
+
+const DataFrameTableView: React.FC<{ value: DataFrameValue }> = ({ value }) => {
+  const { shape, columns, preview } = value;
+  return (
+    <div className="ml-8 mr-2 mt-1 mb-2 overflow-x-auto">
+      <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+        {shape.rows} строк × {columns.length} столбцов
+        {shape.rows > preview.length && ` (показаны первые ${preview.length})`}
+      </div>
+      <div className="border border-slate-200 dark:border-slate-700 rounded overflow-hidden">
+        <table className="text-xs w-full">
+          <thead>
+            <tr className="bg-teal-50 dark:bg-teal-900/30">
+              {columns.map((col) => (
+                <th
+                  key={col}
+                  className="px-2 py-1.5 text-left font-medium text-teal-700 dark:text-teal-300 border-r border-slate-200 dark:border-slate-700 last:border-r-0 whitespace-nowrap"
+                >
+                  {col}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {preview.map((row, i) => (
+              <tr
+                key={i}
+                className={
+                  i % 2 === 0
+                    ? 'bg-white dark:bg-slate-900'
+                    : 'bg-slate-50 dark:bg-slate-800/50'
+                }
+              >
+                {columns.map((col) => (
+                  <td
+                    key={col}
+                    className="px-2 py-1 border-r border-slate-200 dark:border-slate-700 last:border-r-0 text-slate-700 dark:text-slate-300 font-mono max-w-[120px] truncate"
+                  >
+                    {row[col] === null || row[col] === undefined ? (
+                      <span className="text-slate-400 italic">null</span>
+                    ) : (
+                      String(row[col])
+                    )}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
 const VariableItem: React.FC<{
   variable: Variable;
   depth?: number;
@@ -16,11 +77,21 @@ const VariableItem: React.FC<{
 }> = ({ variable, depth = 0, watched = false, onToggleWatch }) => {
   const { t } = useTranslation('common');
   const [isExpanded, setIsExpanded] = useState(depth === 0);
-  const hasChildren = variable.children && variable.children.length > 0;
+  const isDataFrame =
+    variable.type === 'dataframe' &&
+    typeof variable.value === 'object' &&
+    variable.value !== null &&
+    (variable.value as Record<string, unknown>).__type === 'dataframe';
+  const hasChildren = !isDataFrame && !!(variable.children && variable.children.length > 0);
+  const isExpandable = isDataFrame || hasChildren;
 
   const valueDisplay = useMemo(() => {
     if (variable.value === null) return 'null';
     if (variable.value === undefined) return 'undefined';
+    if (isDataFrame) {
+      const df = variable.value as DataFrameValue;
+      return `DataFrame(${df.shape.rows}r × ${df.shape.cols}c)`;
+    }
     if (typeof variable.value === 'string') {
       const truncated = variable.value.length > 30
         ? variable.value.slice(0, 30) + '...'
@@ -37,7 +108,7 @@ const VariableItem: React.FC<{
       return `{${preview}${suffix}}`;
     }
     return String(variable.value);
-  }, [variable.value]);
+  }, [variable.value, variable.type, isDataFrame]);
 
   const getTypeColor = (type: string) => {
     switch (type.toLowerCase()) {
@@ -53,6 +124,8 @@ const VariableItem: React.FC<{
       case 'dict':
       case 'object':
         return 'text-purple-500';
+      case 'dataframe':
+        return 'text-teal-500';
       case 'none':
       case 'null':
         return 'text-slate-400';
@@ -66,9 +139,9 @@ const VariableItem: React.FC<{
       <div
         className="flex items-center gap-2 py-1 px-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded cursor-pointer"
         style={{ paddingLeft: `${depth * 12 + 8}px` }}
-        onClick={() => hasChildren && setIsExpanded(!isExpanded)}
+        onClick={() => isExpandable && setIsExpanded(!isExpanded)}
       >
-        {hasChildren ? (
+        {isExpandable ? (
           <span className={`w-4 text-slate-400 text-xs ${isExpanded ? 'rotate-90' : ''}`}>
             ▶
           </span>
@@ -95,6 +168,9 @@ const VariableItem: React.FC<{
           </button>
         )}
       </div>
+      {isExpanded && isDataFrame && (
+        <DataFrameTableView value={variable.value as DataFrameValue} />
+      )}
       {isExpanded && hasChildren && (
         <div className="variable-children">
           {variable.children!.map((child: Variable, index: number) => (

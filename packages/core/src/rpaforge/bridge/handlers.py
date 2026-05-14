@@ -74,6 +74,7 @@ class BridgeHandlers:
             ("DateTime", "rpaforge_libraries.DateTime", "Date/time operations"),
             ("Variables", "rpaforge_libraries.Variables", "Variable operations"),
             ("WebUI", "rpaforge_libraries.WebUI", "Web automation"),
+            ("DataFrames", "rpaforge_libraries.DataFrames", "DataFrame operations"),
         ]
 
         for lib_name, lib_module, description in library_mappings:
@@ -788,14 +789,37 @@ class BridgeHandlers:
         """
         if self._runner:
             raw_vars = self._runner.get_variables()
-            variables = [
-                {
-                    "name": name,
-                    "value": value,
-                    "type": type(value).__name__,
-                }
-                for name, value in raw_vars.items()
-            ]
+            df_library = self._engine.executor._libraries.get("DataFrames")
+            variables = []
+            for name, value in raw_vars.items():
+                if (
+                    df_library is not None
+                    and isinstance(value, str)
+                    and value in getattr(df_library, "_frames", {})
+                ):
+                    frame = df_library._frames[value]
+                    rows, cols = frame.shape
+                    try:
+                        preview = frame.head(20).to_dicts()
+                    except Exception:
+                        preview = []
+                    variables.append({
+                        "name": name,
+                        "value": {
+                            "__type": "dataframe",
+                            "frame_name": value,
+                            "shape": {"rows": rows, "cols": cols},
+                            "columns": frame.columns,
+                            "preview": preview,
+                        },
+                        "type": "dataframe",
+                    })
+                else:
+                    variables.append({
+                        "name": name,
+                        "value": value,
+                        "type": type(value).__name__,
+                    })
             return {"variables": variables}
         return {"variables": []}
 

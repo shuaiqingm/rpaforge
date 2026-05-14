@@ -9,7 +9,7 @@ import { getVariableNameError } from '../../utils/variableValidation';
 
 export interface VariableDefinition {
   name: string;
-  type: 'string' | 'number' | 'boolean' | 'list' | 'dict' | 'secret' | 'any';
+  type: 'string' | 'number' | 'boolean' | 'list' | 'dict' | 'secret' | 'any' | 'dataframe';
   value: string;
   scope: 'process' | 'task';
   description?: string;
@@ -97,6 +97,7 @@ const VariableDialog: React.FC<VariableDialogProps> = ({
     { value: 'list', label: t('variableDialog.type_list'), icon: '📋', description: t('variableDialog.listType') },
     { value: 'dict', label: t('variableDialog.type_dictionary'), icon: '📖', description: t('variableDialog.dictType') },
     { value: 'secret', label: t('variableDialog.type_secret'), icon: '🔒', description: t('variableDialog.secretType') },
+    { value: 'dataframe', label: t('variableDialog.type_dataframe'), icon: '🗂️', description: t('variableDialog.dataframeType') },
   ];
 
   const scopeOptions = [

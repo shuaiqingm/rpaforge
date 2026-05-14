@@ -677,6 +677,8 @@
     "type_list": "List",
     "type_dictionary": "Dictionary",
     "type_secret": "Secret",
+    "type_dataframe": "DataFrame",
+    "dataframeType": "DataFrame variable — created by DataFrames library operations",
     "scope_process": "Process",
     "scope_task": "Task"
   },
@@ -948,5 +950,10 @@
   "variablePicker": {
     "noVariables": "No variables found"
   },
-  "variableNameTooltip": "Enter a variable name. Example: my_variable"
+  "variableNameTooltip": "Enter a variable name. Example: my_variable",
+  "designer": {
+    "createVariable": "Create Variable",
+    "confirmUnsavedClose": "This diagram has unsaved changes. Are you sure you want to close it?",
+    "closeWithoutSaving": "Close Without Saving"
+  }
 }
