@@ -1,3 +1,5 @@
+[🇷🇺 Русский](README.ru.md)
+
 # RPAForge Libraries
 
 [![PyPI version](https://badge.fury.io/py/rpaforge-libraries.svg)](https://badge.fury.io/py/rpaforge-libraries)

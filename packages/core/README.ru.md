@@ -1,4 +1,4 @@
-[🇷🇺 Русский](README.ru.md)
+[🇬🇧 English](README.md)
 
 # RPAForge Core
 
@@ -6,15 +6,15 @@
 [![Python Support](https://img.shields.io/pypi/pyversions/rpaforge-core.svg)](https://pypi.org/project/rpaforge-core/)
 [![License](https://img.shields.io/github/license/chelslava/rpaforge)](LICENSE)
 
-Core engine for RPAForge — native Python execution with full debugging, recording, and IPC bridge capabilities.
+Основной движок RPAForge — нативное выполнение Python с полной поддержкой отладки, записи и IPC-моста.
 
-## Installation
+## Установка
 
 ```bash
 pip install rpaforge-core
 ```
 
-## Usage
+## Использование
 
 ```python
 from rpaforge import StudioEngine
@@ -35,26 +35,26 @@ result = engine.run(builder.build())
 print(f"Status: {result.status}")
 ```
 
-## Features
+## Возможности
 
-- **Engine**: Native Python execution with topology validation and code generation
-- **Debugger**: Breakpoints, step over/into/out, variable inspection, call stack
-- **Recorder**: Record user actions to automation diagrams
-- **IPC Bridge**: Asyncio JSON-RPC server for Electron ↔ Python communication
+- **Движок**: Нативное выполнение Python с валидацией топологии и генерацией кода
+- **Отладчик**: Точки останова, пошаговое выполнение (с обходом/входом/выходом), инспектор переменных, стек вызовов
+- **Рекордер**: Запись действий пользователя в диаграммы автоматизации
+- **IPC-мост**: Asyncio JSON-RPC сервер для взаимодействия Electron ↔ Python
 
-## Development
+## Разработка
 
 ```bash
-# Install in development mode
+# Установка в режиме разработки
 pip install -e .
 
-# Run tests
+# Запуск тестов
 pytest tests/ -v
 
-# Format code
+# Форматирование кода
 ruff format src/
 ```
 
-## License
+## Лицензия
 
 Apache License 2.0

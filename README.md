@@ -15,6 +15,8 @@
 
 [Getting Started](#quick-start) · [Documentation](#documentation) · [Libraries](#rpa-libraries) · [Roadmap](#roadmap) · [Contributing](#contributing)
 
+[🇷🇺 Русский](README.ru.md)
+
 </div>
 
 ---

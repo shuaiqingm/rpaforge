@@ -1,3 +1,5 @@
+[🇷🇺 Русский](README.ru.md)
+
 # RPAForge Studio
 
 RPAForge Studio is the Electron and React desktop application for building, running, debugging, and recording RPA processes on top of the RPAForge Python engine.
