@@ -551,7 +551,7 @@ export const useFileOperations = (): UseFileOperationsResult => {
         }
       }
 
-      const projectId = `proj_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      const projectId = crypto.randomUUID();
       const projectConfig = {
         id: projectId,
         name,
@@ -679,7 +679,7 @@ export const useFileOperations = (): UseFileOperationsResult => {
         };
       }
 
-      const projectId = `proj_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      const projectId = crypto.randomUUID();
       const projectConfig: ProjectTemplateFile = {
         version: '1.0.0',
         templateType: 'project',

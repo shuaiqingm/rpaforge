@@ -181,7 +181,7 @@ async function loadProcessFile(filePath: string): Promise<ProcessFileContent | n
 }
 
 function generateDiagramId(): string {
-  return `diagram_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  return crypto.randomUUID();
 }
 
 let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -287,7 +287,7 @@ export const useProjectFsStore = create<ProjectFsState>((set, get) => ({
       }
 
       const projectConfig: ProjectConfig = {
-        id: rpaforgeData.project?.id || `proj_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+        id: rpaforgeData.project?.id || crypto.randomUUID(),
         name: rpaforgeData.project?.name || projectFile.name.replace('.rpaforge', ''),
         version: rpaforgeData.project?.version || '1.0.0',
         main: mainDiagramId || diagrams.find((d) => d.type === 'main')?.id || diagrams[0]?.id || '',
