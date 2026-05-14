@@ -1,3 +1,5 @@
+[🇷🇺 Русский](CONTRIBUTING.ru.md)
+
 # Contributing to RPAForge
 
 Thank you for your interest in contributing to RPAForge! This document provides guidelines and instructions for contributing.
