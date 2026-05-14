@@ -4,6 +4,9 @@
 name: Release
 
 on:
+  push:
+    tags:
+      - 'v*.*.*'
   release:
     # "published" fires when a draft release is published or a new release is
     # created directly; does not fire for drafts or prereleases until published.
@@ -69,7 +72,7 @@ jobs:
       # version was already uploaded (idempotent publish).
       # TWINE_USERNAME/__token__ is the standard PyPI API token auth convention.
       - name: Publish to PyPI
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
         run: |
           python -m pip install twine
           python -m twine upload dist/* --skip-existing || echo "Upload skipped or failed"
@@ -83,11 +86,11 @@ jobs:
       # Only runs on manual dispatch so automated release events (which already
       # have a release object) do not create a duplicate release.
       - name: Create GitHub Release
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: v${{ inputs.version }}
-          name: RPAForge v${{ inputs.version }}
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && format('v{0}', inputs.version) || github.ref_name }}
+          name: RPAForge ${{ github.event_name == 'workflow_dispatch' && format('v{0}', inputs.version) || github.ref_name }}
           files: dist/*
           generate_release_notes: true
         env:
