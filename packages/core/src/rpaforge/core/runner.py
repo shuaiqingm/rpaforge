@@ -9,11 +9,9 @@ from __future__ import annotations
 import logging
 import threading
 from collections.abc import Callable
-from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
-from rpaforge.core.checkpoint import CheckpointManager
 from rpaforge.core.execution import (
     ActivityCall,
     ExecutionResult,
@@ -21,6 +19,7 @@ from rpaforge.core.execution import (
 )
 from rpaforge.core.executor import ProcessExecutor, StopExecution
 from rpaforge.core.interfaces import Executor
+from rpaforge.core.models import Breakpoint, CallFrame
 from rpaforge.core.safe_evaluator import safe_eval
 from rpaforge.core.validator import (
     ValidationError as ProcessValidationError,
@@ -30,7 +29,7 @@ from rpaforge.core.validator import (
 )
 
 if TYPE_CHECKING:
-    pass
+    from rpaforge.core.checkpoint import CheckpointManager
 
 logger = logging.getLogger("rpaforge")
 
@@ -43,30 +42,6 @@ class RunnerState(Enum):
     STOPPED = "stopped"
 
 
-@dataclass
-class Breakpoint:
-    """A breakpoint in execution."""
-
-    id: str
-    node_id: str
-    line: int = 0
-    enabled: bool = True
-    condition: str | None = None
-    hit_count: int = 0
-    hit_condition: str | None = None
-
-
-@dataclass
-class CallFrame:
-    """Call stack frame."""
-
-    activity: str
-    library: str
-    line: int
-    args: tuple[Any, ...]
-    node_id: str = ""
-
-
 class ProcessRunner:
     """Process runner with debugging support."""
 
@@ -76,6 +51,8 @@ class ProcessRunner:
         checkpoint_manager: CheckpointManager | None = None,
         checkpoint_frequency: int = 10,
     ):
+        from rpaforge.core.checkpoint import CheckpointManager
+
         self._executor: Executor = executor or ProcessExecutor()
         self._checkpoint_manager = checkpoint_manager or CheckpointManager(
             frequency=checkpoint_frequency
