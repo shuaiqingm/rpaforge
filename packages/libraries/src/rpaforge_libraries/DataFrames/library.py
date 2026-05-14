@@ -443,7 +443,9 @@ class DataFrames:
             "last": col.last(),
         }
         if function not in agg_map:
-            raise ValueError(f"Unknown function '{function}'. Use: {self._AGG_FUNCTIONS}")
+            raise ValueError(
+                f"Unknown function '{function}'. Use: {self._AGG_FUNCTIONS}"
+            )
         result = df.select(agg_map[function]).item()
         logger.info(f"{function}('{column}') on '{frame}' = {result}")
         return result

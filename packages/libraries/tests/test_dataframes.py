@@ -114,13 +114,17 @@ class TestDataFramesLibrary:
         assert all(r["age"] > 27 for r in rows)
 
     def test_filter_rows_contains(self):
-        target = self.lib.filter_rows("people", "name", "contains", "a", result_frame="r")
+        target = self.lib.filter_rows(
+            "people", "name", "contains", "a", result_frame="r"
+        )
         names = [r["name"] for r in self.lib.to_list(target)]
         assert "Carol" in names
         assert "Dave" in names
 
     def test_filter_rows_starts_with(self):
-        target = self.lib.filter_rows("people", "name", "starts_with", "A", result_frame="r")
+        target = self.lib.filter_rows(
+            "people", "name", "starts_with", "A", result_frame="r"
+        )
         rows = self.lib.to_list(target)
         assert rows[0]["name"] == "Alice"
 
@@ -129,7 +133,9 @@ class TestDataFramesLibrary:
         assert self.lib.get_shape(target)["rows"] == 1
 
     def test_filter_rows_is_not_null(self):
-        target = self.lib.filter_rows("people", "score", "is_not_null", result_frame="r")
+        target = self.lib.filter_rows(
+            "people", "score", "is_not_null", result_frame="r"
+        )
         assert self.lib.get_shape(target)["rows"] == 3
 
     def test_filter_rows_unknown_operator(self):
@@ -162,13 +168,17 @@ class TestDataFramesLibrary:
         assert ages == sorted(ages)
 
     def test_sort_descending(self):
-        target = self.lib.sort("people", by=["age"], descending=True, result_frame="sorted")
+        target = self.lib.sort(
+            "people", by=["age"], descending=True, result_frame="sorted"
+        )
         rows = self.lib.to_list(target)
         ages = [r["age"] for r in rows]
         assert ages == sorted(ages, reverse=True)
 
     def test_rename_column(self):
-        target = self.lib.rename_column("people", "age", "years", result_frame="renamed")
+        target = self.lib.rename_column(
+            "people", "age", "years", result_frame="renamed"
+        )
         cols = self.lib.get_columns(target)
         assert "years" in cols
         assert "age" not in cols
@@ -188,7 +198,9 @@ class TestDataFramesLibrary:
         assert dave["score"] == 0.0
 
     def test_fill_nulls_column(self):
-        target = self.lib.fill_nulls("people", -1.0, column="score", result_frame="filled")
+        target = self.lib.fill_nulls(
+            "people", -1.0, column="score", result_frame="filled"
+        )
         rows = self.lib.to_list(target)
         dave = next(r for r in rows if r["name"] == "Dave")
         assert dave["score"] == -1.0
@@ -218,32 +230,53 @@ class TestDataFramesLibrary:
             self.lib.aggregate("people", "age", "median")
 
     def test_group_by(self):
-        target = self.lib.group_by("people", by=["age"], agg_column="name", agg_function="count", result_frame="grouped")
+        target = self.lib.group_by(
+            "people",
+            by=["age"],
+            agg_column="name",
+            agg_function="count",
+            result_frame="grouped",
+        )
         rows = self.lib.to_list(target)
         age_25_row = next(r for r in rows if r["age"] == 25)
         assert age_25_row["name"] == 2
 
     def test_group_by_sum(self):
-        target = self.lib.group_by("people", by=["age"], agg_column="score", agg_function="sum", result_frame="grouped")
+        target = self.lib.group_by(
+            "people",
+            by=["age"],
+            agg_column="score",
+            agg_function="sum",
+            result_frame="grouped",
+        )
         assert target == "grouped"
         assert self.lib.get_shape(target)["cols"] == 2
 
     # ─── Combine ─────────────────────────────────────────────────────────────
 
     def test_join_inner(self):
-        self.lib.from_list([{"name": "Alice", "dept": "Eng"}, {"name": "Zara", "dept": "HR"}], frame_name="depts")
-        target = self.lib.join("people", "depts", on=["name"], how="inner", result_frame="joined")
+        self.lib.from_list(
+            [{"name": "Alice", "dept": "Eng"}, {"name": "Zara", "dept": "HR"}],
+            frame_name="depts",
+        )
+        target = self.lib.join(
+            "people", "depts", on=["name"], how="inner", result_frame="joined"
+        )
         rows = self.lib.to_list(target)
         assert len(rows) == 1
         assert rows[0]["dept"] == "Eng"
 
     def test_join_left(self):
         self.lib.from_list([{"name": "Alice", "dept": "Eng"}], frame_name="depts")
-        target = self.lib.join("people", "depts", on=["name"], how="left", result_frame="joined")
+        target = self.lib.join(
+            "people", "depts", on=["name"], how="left", result_frame="joined"
+        )
         assert self.lib.get_shape(target)["rows"] == 4
 
     def test_concat(self):
-        self.lib.from_list([{"name": "Eve", "age": 28, "score": 88.0}], frame_name="extra")
+        self.lib.from_list(
+            [{"name": "Eve", "age": 28, "score": 88.0}], frame_name="extra"
+        )
         target = self.lib.concat(["people", "extra"], result_frame="all_people")
         assert self.lib.get_shape(target)["rows"] == 5
 

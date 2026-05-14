@@ -803,23 +803,27 @@ class BridgeHandlers:
                         preview = frame.head(20).to_dicts()
                     except Exception:
                         preview = []
-                    variables.append({
-                        "name": name,
-                        "value": {
-                            "__type": "dataframe",
-                            "frame_name": value,
-                            "shape": {"rows": rows, "cols": cols},
-                            "columns": frame.columns,
-                            "preview": preview,
-                        },
-                        "type": "dataframe",
-                    })
+                    variables.append(
+                        {
+                            "name": name,
+                            "value": {
+                                "__type": "dataframe",
+                                "frame_name": value,
+                                "shape": {"rows": rows, "cols": cols},
+                                "columns": frame.columns,
+                                "preview": preview,
+                            },
+                            "type": "dataframe",
+                        }
+                    )
                 else:
-                    variables.append({
-                        "name": name,
-                        "value": value,
-                        "type": type(value).__name__,
-                    })
+                    variables.append(
+                        {
+                            "name": name,
+                            "value": value,
+                            "type": type(value).__name__,
+                        }
+                    )
             return {"variables": variables}
         return {"variables": []}
 
