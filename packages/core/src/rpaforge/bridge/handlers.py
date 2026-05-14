@@ -966,6 +966,9 @@ class BridgeHandlers:
                 message=str(e),
             ) from None
 
+        import os
+
+        temp_path = None
         try:
             with tempfile.NamedTemporaryFile(
                 mode="w",
@@ -990,10 +993,6 @@ class BridgeHandlers:
 
             with open(temp_path) as f:
                 formatted_code = f.read()
-
-            import os
-
-            os.unlink(temp_path)
 
             if result.returncode != 0 and "error" in result.stderr.lower():
                 logger.warning(f"Ruff format warning: {result.stderr}")
@@ -1020,6 +1019,10 @@ class BridgeHandlers:
                 code=JSONRPCErrorCode.INTERNAL_ERROR,
                 message=f"Format error: {str(e)}",
             ) from None
+        finally:
+            if temp_path is not None:
+                with contextlib.suppress(OSError):
+                    os.unlink(temp_path)
 
     def _handle_validate_code(self, params: dict) -> dict[str, Any]:
         """Lint Python source code using ruff and return errors and warnings.
@@ -1073,6 +1076,9 @@ class BridgeHandlers:
                 message=str(e),
             ) from None
 
+        import os
+
+        temp_path = None
         try:
             with tempfile.NamedTemporaryFile(
                 mode="w",
@@ -1094,10 +1100,6 @@ class BridgeHandlers:
                 text=True,
                 timeout=10,
             )
-
-            import os
-
-            os.unlink(temp_path)
 
             errors = []
             warnings = []
@@ -1157,6 +1159,10 @@ class BridgeHandlers:
                 code=JSONRPCErrorCode.INTERNAL_ERROR,
                 message=f"Validation error: {str(e)}",
             ) from None
+        finally:
+            if temp_path is not None:
+                with contextlib.suppress(OSError):
+                    os.unlink(temp_path)
 
     def _handle_generate_code(self, params: dict) -> dict[str, Any]:
         """Generate Python source code from a visual diagram.
