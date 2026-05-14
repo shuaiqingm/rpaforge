@@ -1,5 +1,25 @@
 import { vi } from 'vitest';
 
+vi.mock('i18next-http-backend', () => ({
+  default: {
+    type: 'backend' as const,
+    init: vi.fn(),
+    read: (_lng: string, _ns: string, cb: (err: null, data: Record<string, string>) => void) => cb(null, {}),
+    readMulti: vi.fn(),
+    create: vi.fn(),
+  },
+}));
+
+vi.mock('i18next-browser-languagedetector', () => ({
+  default: {
+    type: 'languageDetector' as const,
+    async: false,
+    init: vi.fn(),
+    detect: () => 'en',
+    cacheUserLanguage: vi.fn(),
+  },
+}));
+
 const buildT = (translations: Record<string, string>) =>
   (key: string, options?: Record<string, unknown>): string => {
     let result = translations[key] ?? key;
@@ -88,6 +108,26 @@ const TRANSLATIONS: Record<string, string> = {
   'errors.somethingWentWrongDesc': 'Please try again later.',
   'errors.tryAgain': 'Try Again',
   'errors.reloadPage': 'Reload Page',
+  'execution.startingProcess': 'Starting process...',
+  'execution.noEndBlock': 'Process has no End block — execution may not terminate cleanly',
+  'execution.processStarted': 'Process started',
+  'execution.noProcessMetadata': 'No process metadata',
+  'execution.createOrLoadFirst': 'Please create or load a process first.',
+  'execution.executionFailed': 'Execution failed',
+  'execution.failedToRun': 'Failed to run process.',
+  'execution.autoConnectFailed': 'Auto-connect failed',
+  'execution.unableToConnect': 'Unable to connect to Python engine',
+  'execution.bridgeConnectionFailed': 'Bridge connection failed',
+  'execution.stepOverFailed': 'Step over failed',
+  'execution.unableToStepOver': 'Unable to step over',
+  'execution.stepIntoFailed': 'Step into failed',
+  'execution.unableToStepInto': 'Unable to step into',
+  'execution.stepOutFailed': 'Step out failed',
+  'execution.unableToStepOut': 'Unable to step out',
+  'execution.codeGenerationFailed': 'Code generation failed',
+  'execution.unableToGenerateCode': 'Unable to generate code',
+  'execution.refreshDebuggerFailed': 'Failed to refresh debugger state',
+  'execution.failedToGenerate': 'Failed to generate Python code',
 };
 
 vi.mock('react-i18next', () => ({
