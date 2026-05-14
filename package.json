@@ -1,9 +1,0 @@
-{
-  "name": "rpaforge-workspace",
-  "private": true,
-  "pnpm": {
-    "overrides": {
-      "devalue": ">=5.8.1"
-    }
-  }
-}
