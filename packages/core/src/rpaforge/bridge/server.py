@@ -56,7 +56,7 @@ class BridgeLogHandler(logging.Handler):
                 "source": record.name,
             }
             if run_id:
-                event["run_id"] = run_id
+                event["runId"] = run_id
 
             self._emit_callback(event)
         except Exception:
