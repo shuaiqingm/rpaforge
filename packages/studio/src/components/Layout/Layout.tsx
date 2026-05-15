@@ -28,11 +28,8 @@ import { MermaidPreview } from '../Common/MermaidPreview';
 import HelpDialog from '../Common/HelpDialog';
 import { WelcomeScreen } from '../Common/WelcomeScreen';
 
-type Tab = 'designer' | 'debugger' | 'console';
-
 const Layout: React.FC = () => {
   const { t } = useTranslation('common');
-  const [activeTab, setActiveTab] = useState<Tab>('designer');
   const [showConsole, setShowConsole] = useState(config.console.defaultOpen);
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   const [generatedFiles, setGeneratedFiles] = useState<Record<string, string> | null>(null);
@@ -54,7 +51,7 @@ const Layout: React.FC = () => {
   const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
   const diagramDocuments = useDiagramStore((state) => state.diagramDocuments);
   const projectPath = useProjectFsStore((state) => state.projectPath);
-  const { isPaused, isStepLoading, setCallStack, setVariables, setStepLoading } = useDebuggerStore();
+  const { isPaused, isStepLoading, isDebugging, setDebugging, setCallStack, setVariables, setStepLoading } = useDebuggerStore();
   const addConsoleLog = useConsoleStore((state) => state.addLog);
   const { markDirty, isDirty } = useFileStore();
   const {
@@ -85,6 +82,12 @@ const Layout: React.FC = () => {
     enabled: config.autosave.enabled,
     intervalMs: config.autosave.intervalMs,
   });
+
+  useEffect(() => {
+    if (executionState === 'idle' || executionState === 'stopped') {
+      setDebugging(false);
+    }
+  }, [executionState, setDebugging]);
 
   const theme = useSettingsStore((state) => state.theme);
 
@@ -212,52 +215,37 @@ const Layout: React.FC = () => {
     return result;
   }, [activeDiagramId, diagramDocuments, generateCode, metadata, nodes, edges, project]);
 
-  const handleRun = useCallback(async () => {
+  const handleRun = useCallback(async (mode: 'run' | 'debug') => {
     try {
       setLoading('execute', true);
-      setLoadingMessage(t('execution.startingProcess'));
-      
-      if (!isConnected) {
-        await connect();
-      }
-      
+      setLoadingMessage(t(mode === 'debug' ? 'execution.startingDebug' : 'execution.startingProcess'));
+      if (!isConnected) await connect();
       if (metadata && nodes.length > 0) {
         const hasEndBlock = nodes.some(n => n.data?.blockData?.type === 'end');
-        if (!hasEndBlock) {
-          toast.warning(t('execution.noEndBlock'));
+        if (!hasEndBlock) toast.warning(t('execution.noEndBlock'));
+        if (mode === 'debug') {
+          const allNodeIds = new Set(nodes.map(n => n.id));
+          await syncBreakpoints(allNodeIds);
+          setDebugging(true);
+        } else {
+          await syncBreakpoints(new Set());
         }
-
-        const allNodeIds = new Set(nodes.map(n => n.id));
-        await syncBreakpoints(allNodeIds);
-        
-        const diagram = {
-          nodes,
-          edges,
-          metadata,
-        };
-        
-        await runDiagram(diagram);
-        toast.success(t('execution.processStarted'), { description: metadata.name });
+        await runDiagram({ nodes, edges, metadata });
+        toast.success(t(mode === 'debug' ? 'execution.debugStarted' : 'execution.processStarted'), { description: metadata.name });
       } else {
-        toast.warning(t('execution.noProcessMetadata'), {
-          description: t('execution.createOrLoadFirst'),
-        });
+        toast.warning(t('execution.noProcessMetadata'), { description: t('execution.createOrLoadFirst') });
       }
     } catch (err) {
-      addConsoleLog({
-        level: 'error',
-        message:
-          err instanceof Error ? `${t('execution.executionFailed')}: ${err.message}` : t('execution.executionFailed'),
-        source: 'layout',
-      });
-      toast.error(t('execution.executionFailed'), {
-        description: err instanceof Error ? err.message : t('execution.failedToRun'),
-      });
+      addConsoleLog({ level: 'error', message: err instanceof Error ? `${t('execution.executionFailed')}: ${err.message}` : t('execution.executionFailed'), source: 'layout' });
+      toast.error(t('execution.executionFailed'), { description: err instanceof Error ? err.message : t('execution.failedToRun') });
     } finally {
       setLoading('execute', false);
       setLoadingMessage(null);
     }
-  }, [addConsoleLog, connect, isConnected, metadata, nodes, edges, runDiagram, syncBreakpoints, setLoading, setLoadingMessage]);
+  }, [addConsoleLog, connect, isConnected, metadata, nodes, edges, runDiagram, syncBreakpoints, setLoading, setLoadingMessage, setDebugging, t]);
+
+  const handleDebug = useCallback(() => handleRun('debug'), [handleRun]);
+  const handlePlay = useCallback(() => handleRun('run'), [handleRun]);
 
   const handleStop = useCallback(async () => {
     await stopProcess();
@@ -414,19 +402,19 @@ const Layout: React.FC = () => {
   return (
     <div key={language} className="h-screen flex flex-col overflow-hidden bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
       <MainToolbar
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
         isConnected={isConnected}
         bridgeState={bridgeState}
         isRunning={isRunning}
         isPaused={isPaused}
         isStepLoading={isStepLoading}
+        isDebugging={isDebugging}
         hasMetadata={!!metadata}
         hasNodes={nodes.length > 0}
         executionSpeed={executionSpeed}
         projectName={project?.name}
         projectPath={projectPath ?? undefined}
-        onRun={handleRun}
+        onPlay={handlePlay}
+        onDebug={handleDebug}
         onPause={handlePause}
         onResume={handleResume}
         onStop={handleStop}
@@ -440,7 +428,7 @@ const Layout: React.FC = () => {
 
       <div className="flex-1 flex overflow-hidden">
         <ActivityPaletteSidebar
-          activeTab={activeTab}
+          isDebugging={isDebugging}
           isPaused={isPaused}
           isStepLoading={isStepLoading}
           onStepOver={handleStepOver}
@@ -448,13 +436,13 @@ const Layout: React.FC = () => {
           onStepOut={handleStepOut}
         />
 
-        <MainContent activeTab={activeTab} showConsole={showConsole} />
+        <MainContent showConsole={showConsole} />
 
-        <PropertiesSidebar activeTab={activeTab} />
+        <PropertiesSidebar isDebugging={isDebugging} />
       </div>
 
       <StatusBar
-        activeTab={activeTab}
+        isDebugging={isDebugging}
         bridgeStatus={bridgeStatus}
         capabilities={capabilities}
         executionState={executionState}
