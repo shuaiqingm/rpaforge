@@ -168,6 +168,7 @@ export const useEngine = (): UseEngineResult => {
         addConsoleLog({
           level: 'error',
           message: `Engine error: ${message}`,
+          runId: useConsoleStore.getState().currentRunId ?? undefined,
           details: {
             activityName: errEvent.activityName,
             library: errEvent.library,
