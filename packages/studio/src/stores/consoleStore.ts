@@ -56,9 +56,14 @@ export const useConsoleStore = create<ConsoleState>((set, get) => ({
     };
 
     set((state) => {
-      const recentLogs = state.logs.slice(-10);
-      const isDuplicate = recentLogs.some(
-        (l) => l.level === log.level && l.message === log.message && l.source === log.source
+      const DEDUP_WINDOW_MS = 500;
+      const cutoff = log.timestamp.getTime() - DEDUP_WINDOW_MS;
+      const isDuplicate = state.logs.some(
+        (l) =>
+          l.timestamp.getTime() >= cutoff &&
+          l.level === log.level &&
+          l.message === log.message &&
+          l.source === log.source
       );
       if (isDuplicate) {
         return state;

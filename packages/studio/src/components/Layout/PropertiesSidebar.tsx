@@ -5,22 +5,17 @@ import CallStackPanel from '../Debugger/CallStackPanel';
 import ExecutionHistoryPanel from '../Debugger/ExecutionHistoryPanel';
 
 interface PropertiesSidebarProps {
-  activeTab: 'designer' | 'debugger' | 'console';
+  isDebugging: boolean;
 }
 
-const PropertiesSidebar: React.FC<PropertiesSidebarProps> = React.memo(({ activeTab }) => {
+const PropertiesSidebar: React.FC<PropertiesSidebarProps> = React.memo(({ isDebugging }) => {
   return (
     <aside className="w-72 border-l border-slate-200 dark:border-slate-700 overflow-hidden flex-shrink-0 flex flex-col">
-      {activeTab === 'designer' && (
-        <>
-          <div className="flex-1 overflow-hidden flex flex-col">
-            <PropertyPanel />
-          </div>
-          <VariablesPanel defaultExpanded={true} />
-        </>
-      )}
-      {activeTab === 'debugger' && (
-        <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 overflow-hidden flex flex-col">
+        <PropertyPanel />
+      </div>
+      {isDebugging ? (
+        <div className="flex-1 flex flex-col overflow-hidden border-t border-slate-200 dark:border-slate-700">
           <div className="flex-1 overflow-hidden">
             <ExecutionHistoryPanel />
           </div>
@@ -28,6 +23,8 @@ const PropertiesSidebar: React.FC<PropertiesSidebarProps> = React.memo(({ active
             <CallStackPanel />
           </div>
         </div>
+      ) : (
+        <VariablesPanel defaultExpanded={true} />
       )}
     </aside>
   );
