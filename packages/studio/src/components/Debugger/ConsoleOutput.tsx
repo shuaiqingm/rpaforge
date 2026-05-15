@@ -301,6 +301,7 @@ const ConsoleOutput: React.FC = () => {
   const setSearchQuery = useConsoleStore((state) => state.setSearchQuery);
   const setAutoScroll = useConsoleStore((state) => state.setAutoScroll);
   const exportLogs = useConsoleStore((state) => state.exportLogs);
+  const currentRunId = useConsoleStore((state) => state.currentRunId);
   const showCurrentRunOnly = useConsoleStore((state) => state.showCurrentRunOnly);
   const setShowCurrentRunOnly = useConsoleStore((state) => state.setShowCurrentRunOnly);
 
@@ -390,6 +391,11 @@ const ConsoleOutput: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-1 flex-shrink-0">
+          {currentRunId && (
+            <span className="px-2 py-0.5 text-xs font-mono bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded">
+              Run: {currentRunId.slice(0, 8)}
+            </span>
+          )}
           <button
             onClick={() => setShowCurrentRunOnly(!showCurrentRunOnly)}
             className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${
