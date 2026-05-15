@@ -461,9 +461,15 @@ export const useFileOperations = (): UseFileOperationsResult => {
         return false;
       }
 
-      const { config: projectConfig, documents } = loadedProject;
+      const { config: projectConfig, documents, variables } = loadedProject;
 
       loadProject(projectConfig, documents);
+
+      if (projectConfig.id) {
+        for (const diagramVars of Object.values(variables)) {
+          loadVariables(projectConfig.id, diagramVars);
+        }
+      }
 
       const mainDiagram = projectConfig.diagrams.find((d) => d.id === projectConfig.main);
       if (mainDiagram && documents[mainDiagram.id]) {
