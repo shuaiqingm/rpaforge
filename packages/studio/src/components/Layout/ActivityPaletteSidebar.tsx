@@ -37,31 +37,8 @@ const ActivityPaletteSidebar: React.FC<ActivityPaletteSidebarProps> = React.memo
   return (
     <aside className="w-64 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 overflow-hidden flex-shrink-0">
       <div className="h-full flex flex-col">
-        <div className={isDebugging ? 'flex-[1] overflow-hidden flex flex-col' : 'h-full flex flex-col'}>
-          <div className="flex border-b border-slate-200 dark:border-slate-700">
-            <button
-              className={`flex-1 px-3 py-2 text-sm font-medium ${designerTab === 'activities' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-500' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-              onClick={() => setDesignerTab('activities')}
-            >
-              {t('sidebar.activities')}
-            </button>
-            <button
-              className={`flex-1 px-3 py-2 text-sm font-medium ${designerTab === 'diagrams' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-500' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-              onClick={() => setDesignerTab('diagrams')}
-            >
-              {t('sidebar.diagrams')}
-            </button>
-          </div>
-          <div className="flex-1 overflow-hidden">
-            {designerTab === 'activities' ? (
-              <ActivityPalette />
-            ) : (
-              <DiagramExplorer onSelectDiagram={setActiveDiagram} activeDiagramId={activeDiagramId} />
-            )}
-          </div>
-        </div>
-        {isDebugging && (
-          <div className="flex-[1] border-t border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden min-h-0">
+        {isDebugging ? (
+          <div className="h-full flex flex-col overflow-hidden">
             <div className="p-3 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
               <h2 className="font-semibold mb-2">{t('sidebar.debugControls')}</h2>
               <div className="space-y-1">
@@ -82,6 +59,30 @@ const ActivityPaletteSidebar: React.FC<ActivityPaletteSidebarProps> = React.memo
             </div>
             <div className="flex-1 overflow-hidden min-h-0">
               {debugTab === 'variables' ? <VariablePanel /> : <BreakpointPanel />}
+            </div>
+          </div>
+        ) : (
+          <div className="h-full flex flex-col">
+            <div className="flex border-b border-slate-200 dark:border-slate-700">
+              <button
+                className={`flex-1 px-3 py-2 text-sm font-medium ${designerTab === 'activities' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-500' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                onClick={() => setDesignerTab('activities')}
+              >
+                {t('sidebar.activities')}
+              </button>
+              <button
+                className={`flex-1 px-3 py-2 text-sm font-medium ${designerTab === 'diagrams' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-500' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                onClick={() => setDesignerTab('diagrams')}
+              >
+                {t('sidebar.diagrams')}
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              {designerTab === 'activities' ? (
+                <ActivityPalette />
+              ) : (
+                <DiagramExplorer onSelectDiagram={setActiveDiagram} activeDiagramId={activeDiagramId} />
+              )}
             </div>
           </div>
         )}
