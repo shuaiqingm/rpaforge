@@ -401,6 +401,46 @@ const Layout: React.FC = () => {
     setShowConsole(prev => !prev);
   }, []);
 
+  const [leftWidth, setLeftWidth] = useState(256);
+  const [rightWidth, setRightWidth] = useState(288);
+  const resizeState = useRef<{ type: 'left' | 'right' | null; startX: number; startWidth: number }>({ type: null, startX: 0, startWidth: 0 });
+
+  const handleLeftResizeStart = useCallback((e: React.MouseEvent) => {
+    resizeState.current = { type: 'left', startX: e.clientX, startWidth: leftWidth };
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  }, [leftWidth]);
+
+  const handleRightResizeStart = useCallback((e: React.MouseEvent) => {
+    resizeState.current = { type: 'right', startX: e.clientX, startWidth: rightWidth };
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  }, [rightWidth]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const { type, startX, startWidth } = resizeState.current;
+      if (type === 'left') {
+        setLeftWidth(Math.max(160, Math.min(480, startWidth + e.clientX - startX)));
+      } else if (type === 'right') {
+        setRightWidth(Math.max(200, Math.min(600, startWidth - e.clientX + startX)));
+      }
+    };
+    const handleMouseUp = () => {
+      resizeState.current.type = null;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
   return (
     <div key={language} className="h-screen flex flex-col overflow-hidden bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
       <MainToolbar
@@ -430,6 +470,7 @@ const Layout: React.FC = () => {
 
       <div className="flex-1 flex overflow-hidden">
         <ActivityPaletteSidebar
+          width={leftWidth}
           isDebugging={isDebugging}
           isPaused={isPaused}
           isStepLoading={isStepLoading}
@@ -438,9 +479,19 @@ const Layout: React.FC = () => {
           onStepOut={handleStepOut}
         />
 
+        <div
+          className="w-1 flex-shrink-0 cursor-col-resize bg-slate-200 dark:bg-slate-700 hover:bg-indigo-400 dark:hover:bg-indigo-500 transition-colors"
+          onMouseDown={handleLeftResizeStart}
+        />
+
         <MainContent showConsole={showConsole} />
 
-        <PropertiesSidebar isDebugging={isDebugging} />
+        <div
+          className="w-1 flex-shrink-0 cursor-col-resize bg-slate-200 dark:bg-slate-700 hover:bg-indigo-400 dark:hover:bg-indigo-500 transition-colors"
+          onMouseDown={handleRightResizeStart}
+        />
+
+        <PropertiesSidebar width={rightWidth} isDebugging={isDebugging} />
       </div>
 
       <StatusBar

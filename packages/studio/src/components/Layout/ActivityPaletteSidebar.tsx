@@ -12,6 +12,7 @@ import BreakpointPanel from '../Debugger/BreakpointPanel';
 import { useDiagramStore } from '../../stores/diagramStore';
 
 interface ActivityPaletteSidebarProps {
+  width: number;
   isDebugging: boolean;
   isPaused: boolean;
   isStepLoading: boolean;
@@ -21,6 +22,7 @@ interface ActivityPaletteSidebarProps {
 }
 
 const ActivityPaletteSidebar: React.FC<ActivityPaletteSidebarProps> = React.memo(({
+  width,
   isDebugging,
   isPaused,
   isStepLoading,
@@ -35,7 +37,7 @@ const ActivityPaletteSidebar: React.FC<ActivityPaletteSidebarProps> = React.memo
   const setActiveDiagram = useDiagramStore((s) => s.setActiveDiagram);
 
   return (
-    <aside className="w-64 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 overflow-hidden flex-shrink-0">
+    <aside style={{ width }} className="bg-slate-50 dark:bg-slate-900 overflow-hidden flex-shrink-0">
       <div className="h-full flex flex-col">
         {isDebugging ? (
           <div className="h-full flex flex-col overflow-hidden">

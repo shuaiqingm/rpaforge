@@ -895,6 +895,7 @@
     "activities": "Activities",
     "diagrams": "Diagrams",
     "debugControls": "Debug Controls",
+    "properties": "Properties",
     "variables": "Variables",
     "breakpoints": "Breakpoints",
     "consoleSettings": "Console Settings",
