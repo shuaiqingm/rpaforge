@@ -142,14 +142,15 @@ export const useConsoleStore = create<ConsoleState>((set, get) => ({
     return filtered;
   },
 
+  // Format: [timestamp] [LEVEL] [run:<short-id>] [source] message
   exportLogs: () => {
     const { logs } = get();
     return logs
       .map(
         (log) =>
-          `[${log.timestamp.toISOString()}] [${log.level.toUpperCase()}] ${
-            log.source ? `[${log.source}] ` : ''
-          }${log.message}`
+          `[${log.timestamp.toISOString()}] [${log.level.toUpperCase()}]${
+            log.runId ? ` [run:${log.runId.slice(0, 8)}]` : ''
+          }${log.source ? ` [${log.source}]` : ''} ${log.message}`
       )
       .join('\n');
   },
