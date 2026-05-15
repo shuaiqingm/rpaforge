@@ -333,6 +333,7 @@ export const useEngine = (): UseEngineResult => {
         addConsoleLog({
           level: 'debug',
           message: `Variable: ${varEvent.name} = ${JSON.stringify(varEvent.value)}`,
+          runId: useConsoleStore.getState().currentRunId ?? undefined,
         });
       })
     );
