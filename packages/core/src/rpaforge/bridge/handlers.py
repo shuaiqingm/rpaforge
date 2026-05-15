@@ -460,6 +460,7 @@ class BridgeHandlers:
             process.tasks.append(task)
 
         self._runner = self._engine._runner
+        self._runner.clear_callbacks()
         self._setup_runner_callbacks()
         self._apply_pending_breakpoints()
 
@@ -467,6 +468,7 @@ class BridgeHandlers:
 
     def _run_source_code(self, source: str, sourcemap: dict | None = None):
         self._runner = self._engine._runner
+        self._runner.clear_callbacks()
         self._setup_runner_callbacks()
         self._current_sourcemap = sourcemap or {}
         return self._engine.run_string(source)

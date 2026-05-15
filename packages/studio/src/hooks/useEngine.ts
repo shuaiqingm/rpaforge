@@ -53,7 +53,6 @@ export const useEngine = (): UseEngineResult => {
   const [lastResult, setLastResult] = useState<unknown>(null);
 
   const bridgeRef = useRef<PythonBridge | null>(null);
-  const listenersRegisteredRef = useRef(false);
   const currentExecutionIdRef = useRef<string | null>(null);
   const variablePollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const setProcessConnected = useProcessMetadataStore((state) => state.setConnected);
@@ -92,11 +91,6 @@ export const useEngine = (): UseEngineResult => {
   }, [addConsoleLog]);
 
   useEffect(() => {
-    if (listenersRegisteredRef.current) {
-      return;
-    }
-    listenersRegisteredRef.current = true;
-
     bridgeRef.current = sharedBridge;
 
     if (bridgeRef.current.isReady()) {
@@ -287,10 +281,12 @@ export const useEngine = (): UseEngineResult => {
         setExecutionState('running');
         setCurrentExecutingNode(null);
         useDebuggerStore.getState().setPaused(false);
-        addConsoleLog({
-          level: 'info',
-          message: 'Process resumed',
-        });
+        if (useDebuggerStore.getState().isDebugging) {
+          addConsoleLog({
+            level: 'info',
+            message: 'Process resumed',
+          });
+        }
       })
     );
 
@@ -337,20 +333,10 @@ export const useEngine = (): UseEngineResult => {
 
     return () => {
       unsubscribers.forEach((unsub) => unsub());
-      listenersRegisteredRef.current = false;
     };
-  }, [
-    addConsoleLog,
-    refreshCapabilities,
-    setCallStack,
-    setCurrentPosition,
-    setCurrentExecutingNode,
-    setExecutionState,
-    setProcessConnected,
-    setVariables,
-    startExecution,
-    endExecution,
-  ]);
+  // All captured values are stable (Zustand actions + useState setters), so [] is correct.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (isRunning && !isPaused && bridgeRef.current) {

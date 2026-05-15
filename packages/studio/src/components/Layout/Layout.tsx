@@ -223,10 +223,10 @@ const Layout: React.FC = () => {
       if (metadata && nodes.length > 0) {
         const hasEndBlock = nodes.some(n => n.data?.blockData?.type === 'end');
         if (!hasEndBlock) toast.warning(t('execution.noEndBlock'));
+        setDebugging(mode === 'debug');
         if (mode === 'debug') {
           const allNodeIds = new Set(nodes.map(n => n.id));
           await syncBreakpoints(allNodeIds);
-          setDebugging(true);
         } else {
           await syncBreakpoints(undefined, true);
         }
@@ -261,7 +261,8 @@ const Layout: React.FC = () => {
 
   const refreshDebuggerState = useCallback(async () => {
     try {
-      const vars = await getVariables() as Array<{ name: string; value: unknown; type: string }>;
+      const varsResult = await getVariables() as { variables?: Array<{ name: string; value: unknown; type: string }> };
+      const vars = varsResult?.variables;
       if (vars) {
         setVariables(vars.map(v => ({
           name: v.name,
@@ -271,7 +272,8 @@ const Layout: React.FC = () => {
         })));
       }
 
-      const stack = await getCallStack() as Array<{ activity: string; library: string; line: number; nodeId: string }>;
+      const stackResult = await getCallStack() as { callStack?: Array<{ activity: string; library: string; line: number; nodeId: string }> };
+      const stack = stackResult?.callStack;
       if (stack) {
         setCallStack(stack);
       }

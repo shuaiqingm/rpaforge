@@ -47,7 +47,7 @@ interface MainToolbarProps {
 }
 
 const MainToolbar: React.FC<MainToolbarProps> = React.memo(({
-  isDebugging,
+  isDebugging: _isDebugging,
   isConnected: _isConnected,
   bridgeState,
   isRunning,
