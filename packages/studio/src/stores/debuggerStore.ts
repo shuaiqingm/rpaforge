@@ -6,6 +6,7 @@
  */
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { Breakpoint, Variable, CallFrame } from '../types/engine';
 import { useExecutionStore } from './executionStore';
 
@@ -60,7 +61,9 @@ interface DebuggerState {
   reset: () => void;
 }
 
-export const useDebuggerStore = create<DebuggerState>((set) => ({
+export const useDebuggerStore = create<DebuggerState>()(
+  persist(
+    (set) => ({
   connectionState: 'disconnected',
 
   breakpoints: new Map(),
@@ -255,4 +258,21 @@ export const useDebuggerStore = create<DebuggerState>((set) => ({
       isDebugging: false,
       lastBreakpointId: null,
     }),
-}));
+  }),
+  {
+    name: 'rpaforge-debugger',
+    partialize: (state) => ({
+      breakpoints: Array.from(state.breakpoints.entries()),
+      fileBreakpoints: Array.from(state.fileBreakpoints.entries()),
+    }),
+    merge: (persisted, current) => {
+      const p = persisted as { breakpoints?: [string, Breakpoint][]; fileBreakpoints?: [string, string[]][] };
+      const breakpoints = new Map<string, Breakpoint>(p?.breakpoints ?? []);
+      const fileBreakpoints = new Map<string, string[]>(p?.fileBreakpoints ?? []);
+      for (const bp of breakpoints.values()) {
+        useExecutionStore.getState().addBreakpoint(bp);
+      }
+      return { ...current, breakpoints, fileBreakpoints };
+    },
+  }
+));

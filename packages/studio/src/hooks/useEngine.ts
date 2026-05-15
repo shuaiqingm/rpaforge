@@ -39,7 +39,7 @@ export interface UseEngineResult {
   stepOver: () => Promise<void>;
   stepInto: () => Promise<void>;
   stepOut: () => Promise<void>;
-  syncBreakpoints: (validNodeIds?: Set<string>) => Promise<void>;
+  syncBreakpoints: (validNodeIds?: Set<string>, runMode?: boolean) => Promise<void>;
 }
 
 export const useEngine = (): UseEngineResult => {
@@ -227,6 +227,12 @@ export const useEngine = (): UseEngineResult => {
 
     unsubscribers.push(
       bridgeRef.current.onEvent('processPaused', async (event) => {
+        if (!useDebuggerStore.getState().isDebugging) {
+          if (bridgeRef.current) {
+            try { await bridgeRef.current.sendRequest('resumeProcess', {}); } catch { /* empty */ }
+          }
+          return;
+        }
         setIsPaused(true);
         setExecutionState('paused');
         useDebuggerStore.getState().setPaused(true);
@@ -482,14 +488,14 @@ export const useEngine = (): UseEngineResult => {
     []
   );
 
-  const syncBreakpoints = useCallback(async (validNodeIds?: Set<string>): Promise<void> => {
+  const syncBreakpoints = useCallback(async (validNodeIds?: Set<string>, runMode = false): Promise<void> => {
     if (!bridgeRef.current) {
       throw new Error('Not connected to Python engine');
     }
 
     const { cleanupStaleBreakpoints } = useDebuggerStore.getState();
-    
-    if (validNodeIds) {
+
+    if (validNodeIds && !runMode) {
       cleanupStaleBreakpoints(validNodeIds);
     }
     
@@ -503,22 +509,24 @@ export const useEngine = (): UseEngineResult => {
       }
     }
 
-    const { breakpoints: currentBreakpoints } = useDebuggerStore.getState();
-    for (const bp of currentBreakpoints.values()) {
-      if (bp.enabled) {
-        try {
-          await bridgeRef.current.sendRequest('setBreakpoint', {
-            nodeId: bp.nodeId || bp.id,
-            line: bp.line,
-            condition: bp.condition,
-          });
-        } catch (err) {
-          addConsoleLog({
-            level: 'warn',
-            message: err instanceof Error
-              ? `Failed to sync breakpoint ${bp.id}: ${err.message}`
-              : `Failed to sync breakpoint ${bp.id}`,
-          });
+    if (!runMode) {
+      const { breakpoints: currentBreakpoints } = useDebuggerStore.getState();
+      for (const bp of currentBreakpoints.values()) {
+        if (bp.enabled) {
+          try {
+            await bridgeRef.current.sendRequest('setBreakpoint', {
+              nodeId: bp.nodeId || bp.id,
+              line: bp.line,
+              condition: bp.condition,
+            });
+          } catch (err) {
+            addConsoleLog({
+              level: 'warn',
+              message: err instanceof Error
+                ? `Failed to sync breakpoint ${bp.id}: ${err.message}`
+                : `Failed to sync breakpoint ${bp.id}`,
+            });
+          }
         }
       }
     }

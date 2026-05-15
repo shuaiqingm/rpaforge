@@ -228,7 +228,7 @@ const Layout: React.FC = () => {
           await syncBreakpoints(allNodeIds);
           setDebugging(true);
         } else {
-          await syncBreakpoints(new Set());
+          await syncBreakpoints(undefined, true);
         }
         await runDiagram({ nodes, edges, metadata });
         toast.success(t(mode === 'debug' ? 'execution.debugStarted' : 'execution.processStarted'), { description: metadata.name });
