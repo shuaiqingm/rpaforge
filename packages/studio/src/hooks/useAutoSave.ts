@@ -150,7 +150,9 @@ export function useAutoSave(options: AutoSaveOptions = {}): {
   const rafRef = useRef<number | null>(null);
   const pendingSaveRef = useRef<boolean>(false);
 
-  const performSave = useCallback(async () => {
+  const performSave = useCallback(async (force = false) => {
+    if (!force && !isDirtyRef.current) return;
+
     const metadata = metadataRef.current;
     const nodes = nodesRef.current;
     const edges = edgesRef.current;
@@ -230,7 +232,7 @@ export function useAutoSave(options: AutoSaveOptions = {}): {
       rafRef.current = null;
     }
     pendingSaveRef.current = false;
-    await performSave();
+    await performSave(true);
   }, [performSave]);
 
   const clearBackup = useCallback(() => {
