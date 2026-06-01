@@ -50,9 +50,8 @@ const Layout: React.FC = () => {
   const project = useDiagramStore((state) => state.project);
   const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
   const diagramDocuments = useDiagramStore((state) => state.diagramDocuments);
-  const { isPaused, isStepLoading, isDebugging, setDebugging, setCallStack, setVariables, setStepLoading } = useDebuggerStore(
+  const { isStepLoading, isDebugging, setDebugging, setCallStack, setVariables, setStepLoading } = useDebuggerStore(
     useShallow((state) => ({
-      isPaused: state.isPaused,
       isStepLoading: state.isStepLoading,
       isDebugging: state.isDebugging,
       setDebugging: state.setDebugging,
@@ -65,8 +64,6 @@ const Layout: React.FC = () => {
   const { markDirty, isDirty } = useFileStore();
   const {
     isConnected,
-    isRunning,
-    bridgeState,
     bridgeStatus,
     capabilities,
     connect,

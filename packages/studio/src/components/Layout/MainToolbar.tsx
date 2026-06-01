@@ -65,8 +65,6 @@ const MainToolbar: React.FC<MainToolbarProps> = React.memo(({
 
   // Read execution state from stores
   const { isRunning, isPaused, bridgeState } = useEngine();
-  // Ensure variables are used to satisfy TypeScript
-  const _ = [isRunning, isPaused, bridgeState].length > 0;
   const isStepLoading = useDebuggerStore((s) => s.isStepLoading);
   const executionSpeed = useExecutionStore((s) => s.executionSpeed);
   const setExecutionSpeed = useExecutionStore((s) => s.setExecutionSpeed);
