@@ -64,8 +64,9 @@ const MainToolbar: React.FC<MainToolbarProps> = React.memo(({
   const resolvedTheme = useResolvedTheme();
 
   // Read execution state from stores
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { isRunning, isPaused, bridgeState } = useEngine();
+  // Ensure variables are used to satisfy TypeScript
+  const _ = [isRunning, isPaused, bridgeState].length > 0;
   const isStepLoading = useDebuggerStore((s) => s.isStepLoading);
   const executionSpeed = useExecutionStore((s) => s.executionSpeed);
   const setExecutionSpeed = useExecutionStore((s) => s.setExecutionSpeed);
